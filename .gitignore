@@ -1,9 +1,7 @@
 node_modules
 .DS_Store
 .env
-/lib/
 tests.js
 allResJson.json
 package-lock.json
 TODO.txt
-.vscod
