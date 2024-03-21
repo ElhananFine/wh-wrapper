@@ -61,7 +61,7 @@ For more detailed instructions and advanced usage, please refer to the [document
 ## Requirements ✅
 
 - Node.js >= 12.x
-- WhatsApp Cloud API account and credentials. If you don't have credentials or aren't sure what this is, [please refer to our getting started guide with Facebook and WhatsApp at](https://docs.elhananfine.com/docs/Guides/getting-started)
+- WhatsApp Cloud API account and credentials. If you don't have credentials or aren't sure what this is, [please refer to our getting started guide with Facebook and WhatsApp](https://docs.elhananfine.com/docs/Guides/getting-started)
 
 ## To-Do 📋
 

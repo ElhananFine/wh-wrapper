@@ -1,0 +1,5 @@
+name: Push
+
+on:
+  - push
+# this page in editing

@@ -1,6 +1,4 @@
 node_modules
 .DS_Store
 .env
-tests.js
 package-lock.json
-TODO.txt
