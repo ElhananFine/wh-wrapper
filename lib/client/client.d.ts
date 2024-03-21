@@ -55,7 +55,7 @@ export default class Client extends EventEmitter {
     private _sendMessage;
     getPhoneNumbers(): Promise<getPhoneNumbers>;
     getPhoneData(): Promise<GetPhoneDataReturn>;
-    getDisplayNameStatus(): Promise<getDisplayNameStatus>;
+    getNameStatus(): Promise<getDisplayNameStatus>;
     getAllSubscriptions(): Promise<GetAllSubscriptions[]>;
     deleteMedia(mediaID: string | number): Promise<boolean>;
     markMessageAsRead(messageID: string): Promise<boolean>;

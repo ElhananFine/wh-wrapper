@@ -1,4 +1,4 @@
-import { ClientOptions, HomeWork, LocationType, MediaBase, ReactionType } from "./shared";
+import { ClientOptions, GetPhoneDataReturn, HomeWork, LocationType, MediaBase, ReactionType } from "./shared";
 export type Metadata = {
     displayPhoneNumber: string;
     phoneNumberID: string;
@@ -53,3 +53,4 @@ export type Error = {
     details?: string;
 };
 export type Options = ClientOptions;
+export type GetPhoneData = GetPhoneDataReturn;

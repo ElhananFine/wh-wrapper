@@ -24,7 +24,7 @@ export type ClientOptions = {
     apiVersion: string | number;
     webHookEndpoint: string;
     callbackUrl: string;
-    appID: string;
+    appID: number | string;
     appSecret: string;
     businessAccountID: string;
     server: Express;
