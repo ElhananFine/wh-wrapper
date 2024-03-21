@@ -1,0 +1,53 @@
+# Incoming Messages Event
+
+The `messages` event is emitted when a new message is received from a user. This includes text messages, media messages, reactions, locations, and other types of messages.
+
+**Listening for the `messages` event:**
+
+```javascript
+wh.on("messages", async (message: Message) => {
+  console.log(message);
+});
+```
+
+**The `Message` class:**
+
+- `id` (string): The ID of the message (useful for replying to the message, creating threads, and marking as read).
+- `metadata` (object):
+  - `displayPhoneNumber` (string): The phone number to which the message was sent.
+  - `phoneNumberID` (string): The ID of the phone number to which the message was sent.
+- `type` (string): The type of the message, which can be one of the following (in lowercase): `text`, `image`, `video`, `document`, `audio`, `sticker`, `reaction`, `location`, `contacts`, `unsupported`. Additionally, there will be a property with the same name as the type that will contain the actual content.
+- `fromUser` (object):
+  - `WhID` (string): The WhatsApp ID of the user (the phone number with the country code).
+  - `name` (string): The name of the sender.
+- `timestamp` (Date): The time of the message.
+- `context` (object, optional): An object with `messageID` - The ID of the message that was replied to, and `fromUserID` (string) – The ID of the user who sent the message that was replied to. This will be present only if the incoming message is a reply to another message.
+- `forwarded` (boolean): Whether the message was forwarded.
+- `forwardedManyTimes` (boolean): Whether the message was forwarded many times. This will only appear if `forwarded` is `true`.
+- `text` (string): The text of the message (if the message type is `type.text`).
+- `image` (object): The image of the message (if the message type is `type.image`), with properties: `sha256`, `id`, `caption` (optional), `mimeType`.
+- `video` (object): The video of the message (if the message type is `type.video`), with the same properties as `image`.
+- `sticker` (object): The sticker of the message (if the message type is `type.sticker`), with the same properties as `image`, but instead of `caption`, it has `animated` (boolean) indicating whether the sticker is animated.
+- `audio` (object): The audio of the message (if the message type is `type.audio`), with the same properties as `image`, but instead of `caption`, it has `voice` (boolean) indicating whether the audio is a voice message or just an audio file.
+- `document` (object): The document of the message (if the message type is `type.document`), with the same properties as `image`, plus an optional `filename` property with the name of the file.
+- `reaction` (object): The reaction of the message (if the message type is `type.reaction`), with properties: `messageID` (the ID of the message that was reacted to), `type` (either `react` or `unReact`), and if `type` is `react`, an additional property `emoji` with the emoji used for the reaction.
+- `location` (object): The location of the message (if the message type is `type.location`), with properties: `latitude` (number), `longitude` (number), `name` (string, optional), `address` (string, optional), `url` (string, optional).
+- `contacts`: If the message type is `contacts`, documentation for this will be added soon.
+- `error` (object): The error of the message (if the message type is `type.unsupported`), with properties: `errorCode` - The error class (detailed documentation for error codes can be found on the Errors page).
+- `hasMedia` (boolean): Whether the message contains media (`image`, `video`, `sticker`, `document`, or `audio`).
+- `isReply` (boolean): Whether the message is a reply. If `true`, the `context` property will be present.
+
+**Methods:**
+
+- `downloadMedia(saveInDisk?, fileName?, folderPath?)`: Downloads the media of the message, if `hasMedia` is `true`. It accepts the following optional parameters:
+  - `saveInDisk` (boolean): Whether to save the media to disk.
+  - `fileName` (string): The name of the file to save the media as (required only if `saveInDisk` is `true`).
+  - `folderPath` (string): The path to the folder where the media should be saved (required only if `saveInDisk` is `true`; otherwise, the default is the `files` folder in the project directory).
+  Returns an object with the following properties:
+  - `mimeType` (string): The MIME type of the media.
+  - `fileSize` (number): The size of the media file.
+  - `mediaID` (string): The ID of the media on WhatsApp's servers.
+  - `path` (string): The path to the saved media file (if `saveInDisk` is `true`), or the `base64` string representation (if `saveInDisk` is `false`).
+- `markMessageAsRead()`: Marks the message as read. This method does not take any parameters.
+
+For more information on the available methods for handling incoming messages, see the [Event Handlers documentation](/docs/listeners#common-methods).

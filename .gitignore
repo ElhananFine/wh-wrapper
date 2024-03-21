@@ -2,6 +2,5 @@ node_modules
 .DS_Store
 .env
 tests.js
-allResJson.json
 package-lock.json
 TODO.txt

@@ -1,0 +1,134 @@
+import { Callout, Steps} from 'nextra/components'
+import Image from 'next/image'
+
+# Getting Started with the WhatsApp Cloud API
+
+To begin using the WhatsApp Cloud API, you'll need to create a Facebook app. This requires having a Facebook Developer account. If you don't have one yet, you can sign up at https://developers.facebook.com/.
+<Steps>
+### **Create a new app**
+After creating your account, you'll need to create a new app. Navigate to https://developers.facebook.com/apps and click "Create App" or go directly to https://developers.facebook.com/apps/creation/.
+![image5](/5.png)
+
+A registration window will appear asking "What do you want your app to do?" Select "Other" as the use case.
+![image6](/6.png)
+
+Next, you'll be prompted to choose the app type. Select "Business".
+![image7](/7.png)
+
+Fill in the required details (email, app name), and click "Create App".
+![image8](/8.png)
+
+Once your app is created, scroll down on the "Add products to your app" screen (you will be automatically redirected to it) and search for WhatsApp. Click "Set Up".
+![image9](/9.png)
+
+You'll then be asked to select a Meta Business Account. If you have one, select it and click "Next". Accept the terms and conditions and click "Submit". If you don't have a Business Account yet, you'll need to create one.
+![image10](/10.png)
+
+In the left menu (under Products), expand WhatsApp and click "API Setup". You'll see the following:
+
+- A Temporary access token at the top. This token is used to interact with the WhatsApp Cloud API.
+- Your Phone number ID, which identifies the number you'll use to send and receive messages.
+
+You'll need both the Temporary access token and Phone number ID for the next steps.
+
+The Temporary access token is valid for 24 hours. After that, you'll need to generate a new one. (We'll cover how to create a permanent token later.)
+![image11](/11.png)
+
+If you haven't connected a real phone number to your app, you can use a test phone number provided by Meta for testing purposes only. You can send messages to up to 5 different numbers, which must be added to the Allowed Numbers list. (We'll explain how to add a verified number to your account later.)
+
+We'll also include documentation on verifying your business, sending a message, and setting up the WebHook.
+
+### **Add phone number**
+In order to send messages, you'll need to add a real phone number to your app. You can find in the API Setup page under the product page (you should be on this page now if you followed the guide).
+
+If you're still in a development environment, you don't have to add a phone number right away. You can use one of the test phone numbers provided by WhatsApp (Meta). With the test numbers, you can send messages to up to five different numbers that you'll need to add to the Allowed Numbers list (Select the Test number in the From field and then in the To field, go to Manage phone number list and add the numbers you want to send messages to).
+
+For a production environment, you'll need a real phone number. In the Phone Numbers section, select **Add phone number** in the `From` field.
+![image12](/12.png)
+
+Enter a display name for the number (visible to everyone), time zone, and an optional description (visible to everyone) and category (visible to everyone). Click Next.
+![image13](/13.png)
+
+Enter the phone number and choose how to verify it (via voice call or SMS). Click Next.
+![image14](/14.png)
+
+Enter the OTP code (One-time password) you received, and your number will be verified.
+![image15](/15.png)
+
+Now you can refresh the page, and select the **new number you added** in the `From` field. After selecting it, the **Phone number ID** for that number will appear below it. You'll need this ID for the next steps.
+
+### **Create a permanent token**.
+
+To create a permanent token (The temporary token is valid for 24 hours only), you need to access the Meta Business Suite (Facebook Business). Follow these steps:
+
+1. Sign into the [Meta Business Suite](https://business.facebook.com/).
+2. In the top-left dropdown menu, locate your business account and click its **Settings** (gear) icon.
+
+![image16](/16.png)
+
+3. On the page that opens, navigate to the "Users" tab and click on "System Users."
+4. Click "Create a New System User" to generate a new token.
+
+![image17](/17.png)
+
+5. In the dropdown menu, select the desired app (the one you created earlier).
+6. Choose the token's validity period. For security reasons, it's recommended to select "Never Expire" or a shorter duration like 60 days, although a longer validity period is more convenient.
+7. Ensure that the two WhatsApp permissions (whatsapp_business_management, whatsapp_business_messaging) are checked.
+
+![image18](/18.png)
+
+8. After completing the setup, copy the token that appears on the screen and save it securely. You'll need this token for the next steps when initializing the library.
+![image19](/19.png)
+
+### **WhatsApp Account Verification**
+
+While you can start utilizing the library and the WhatsApp bot at this stage, there's one more step to ensure your account is fully functional.
+
+By default, WhatsApp (Meta) imposes a limit of 250 conversations within a 24-hour period. A conversation refers to all the messages exchanged between the bot and a user during that timeframe. For more details on what constitutes a conversation, please refer to our [conversation explanation page](link-to-conversation-explanation-page).
+
+Verifying your account will increase your free conversation limit from 250 per month to 1,000 per month. If you exceed 1,000 conversations after verification, you'll be charged a fee that varies by country. For more information on pricing, please consult our [pricing explanation page](link-to-pricing-explanation-page).
+
+To overcome the 250-conversation limit and increase it to 1,000 (and potentially up to 500,000 conversations, depending on the quality rating of your number), you need to verify your business.
+
+To initiate the verification process, navigate to the Business Manager (if you've followed the previous steps, you should already be there), select the "Security Center" tab, and click "Start Verification" under the "Business Verification" section.
+
+Begin the process by selecting your country and providing your business details, including address, website, phone number, etc. In the next step, you'll need to verify your domain email or add a DNS TXT record to your domain. Enter the OTP (One-Time Password) received or create a TXT record on your domain, after which you'll be prompted to upload documents to verify your business/organization. The supported documents may vary by country, but generally include incorporation/business registration documents, business licenses/tax documents, utility bills (gas, water, electricity, etc.), or bank account verification documents.
+
+After uploading the required documents, Meta will review them (this process may take a few days). Once the verification is complete, you'll receive a notification. If your business is verified, you'll receive a verified badge. Otherwise, you'll need to go through the verification process again, following the same steps, but with additional feedback on why your previous attempt failed. Ensure that all the information you provided is accurate. You can check your verification status at any time in the Security Center.
+
+(Explanatory photos of this step will be uploaded later)
+
+### **Init client and send a message**
+
+After completing the registration, phone number setup (or using a test number), and token generation (and account verification, if applicable, but not mandatory), it's time to start using the library. Once you've installed it [refer to the Getting Started guide for installation instructions](/docs), you can import and initialize a client:
+
+```javascript
+import Client from "wh-wrapper";
+const wh = new Client(phoneID, token);
+```
+
+Replace `phoneID` with the ID of the phone number you added, and `token` with the permanent token you generated.
+
+After initialization, you can send messages, perform actions, and more. For example, to send a message:
+
+```javascript
+const buttons = [
+  { title: "Help", callbackData: "help" },
+  { title: "About", callbackData: "about" },
+];
+const messageId = await wh.sendMessage(recipientPhoneNumber, "What can I help you with?", {
+  footer: "Powered by wh-wrapper",
+  buttons,
+});
+// messageId: wamid.XXX=
+```
+
+For a comprehensive documentation of the initialization options and available methods, please refer to the [Client documentation page](/docs/client).
+
+To receive incoming messages, you need to set up a Webhook. Please consult the [Webhook Setup Guide](/docs/Guides/webhook) for instructions on manual configuration through the dashboard or automatic setup using the library. Once the webhook is set up, you'll be able to receive incoming messages and updates.
+
+### **The next steps**
+Documentation for "The next steps" section has not been written yet
+
+
+</Steps>

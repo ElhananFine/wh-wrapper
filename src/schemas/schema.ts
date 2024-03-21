@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { WhatsAppProfileVertical } from "../interfaces/client-interface";
 
 export const Language = {
   AFRIKAANS: "af",
@@ -166,29 +167,7 @@ export const UpdateBusinessProfileSchema = z.object({
   address: z.string().max(256).optional(),
   description: z.string().max(512).optional(),
   email: z.string().email().max(128).optional(),
-  industry: z
-    .enum([
-      "UNDEFINED",
-      "OTHER",
-      "AUTO",
-      "BEAUTY",
-      "APPAREL",
-      "EDU",
-      "ENTERTAIN",
-      "EVENT_PLAN",
-      "FINANCE",
-      "GROCERY",
-      "GOVT",
-      "HOTEL",
-      "HEALTH",
-      "NONPROFIT",
-      "PROF_SERVICES",
-      "RETAIL",
-      "TRAVEL",
-      "RESTAURANT",
-      "NOT_A_BIZ",
-    ])
-    .optional(),
+  industry: z.nativeEnum(WhatsAppProfileVertical),
   profilePictureHandle: z.string().optional(),
   websites: z
     .array(z.string().url().max(256))

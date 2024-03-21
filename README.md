@@ -1,43 +1,84 @@
 # wh-wrapper
 
-**Please Note**: This library is currently under active development and the code is unfinished/unstructured. Breaking changes should be expected in upcoming days as the library evolves.
+ [![npm](https://img.shields.io/npm/v/wh-wrapper)](https://www.npmjs.com/package/wh-wrapper) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Issues](https://img.shields.io/github/issues/ElhananFine/wh-wrapper)](https://github.com/ElhananFine/wh-wrapper/issues)
 
-wh-wrapper is a library that is being developed to wrap and simplify access to the WhatsApp Cloud API from JavaScript/TypeScript applications.
+wh-wrapper is a robust and developer-friendly wrapper library for the WhatsApp Cloud API, meticulously crafted to streamline the process of building powerful and feature-rich WhatsApp bots. 🤖 With this library, you can seamlessly integrate WhatsApp messaging capabilities into your applications, unlocking a world of possibilities for engaging with your users. 💬
 
-# installation
+## Features 🚀
+
+**Lightning-fast**: ⚡ Leveraging modern JavaScript and optimized performance, wh-wrapper ensures blazing-fast message delivery and processing.
+
+**Seamless Messaging**: 📨 Send and receive messages with ease, supporting rich media attachments, interactive buttons, and more.
+
+**Webhook Support**: 🎣 Receive real-time updates and incoming messages through webhooks, enabling instant responsiveness.
+
+**TypeScript Friendly**: 🦾 Enjoy the benefits of type safety and better tooling with comprehensive TypeScript support.
+
+**Template Management**: 🗃️ Create and manage reusable message templates for consistent and streamlined communication.
+
+**Comprehensive Documentation**: 📚 Get up and running quickly with detailed guides, examples, and extensive API documentation.
+
+## Installation 📦
+
+You can install wh-wrapper using npm or your preferred package manager:
 
 ```bash
-npm i wh-wrapper
+npm install wh-wrapper
 ```
 
-# Setup and Usage
+## Quick Start ⏩
 
-```js
-import Client from "wh-wrapper";
+Initialize a new WhatsApp client instance and start sending and receiving messages:
 
-const wh = new Client(phoneNumberId, TOKEN, verifyToken);
+```javascript
+import Client from 'wh-wrapper';
 
-wh.on("messages", async (message) => {
-  console.log(message);
-  await message.markMessageAsRead();
-  await message.replyText("Welcome from wh-wrapper");
+const wh = new Client(phoneID, token);
+
+wh.on('messages', async (message) => {
+  console.log(message); // Handle incoming messages here
 });
 
-wh.on("statuses", async (status) => {
-  console.log(status);
+const messageId = await wh.sendMessage(recipientPhoneNumber, 'Hello, World!');
+```
+
+### Webhook Example 🕸️
+
+```javascript
+import Client from 'wh-wrapper';
+
+const verifyToken = 'your_verify_token';
+
+const wh = new Client(phoneID, token, verifyToken);
+
+wh.on('messages', async (message) => {
+  console.log(message); // Handle incoming messages here
 });
 ```
 
-# Current Status:
+For more detailed instructions and advanced usage, please refer to the [documentation](https://docs.elhananfine.com/docs). 📖
 
-The code for this library was originally some unpublished wrapper code I had written for my own use. I have now open-sourced it to build out into a full-fledged library for public use.
+## Requirements ✅
 
-Over the next few days, I will be restructuring the code and organizing it properly as the library takes shape. Please excuse any messiness or lack of coherence for now!
+- Node.js >= 12.x
+- WhatsApp Cloud API account and credentials. If you don't have credentials or aren't sure what this is, [please refer to our getting started guide with Facebook and WhatsApp at](https://docs.elhananfine.com/docs/Guides/getting-started)
 
-# Contributing
+## To-Do 📋
 
-If you'd like to contribute to wh-wrapper as the code takes form, pull requests are welcome! Just be aware the structure and APIs may change rapidly in the short term.
+- Add support for Flows ⚙️
+- Enhance incoming message types (TypeScript) 🏷️
+- Expand documentation and examples 📖
 
-# Support
+## License 📄
 
-If you have any questions, feel free to open a GitHub issue!
+wh-wrapper is licensed under the [MIT License](https://github.com/ElhananFine/wh-wrapper/blob/main/LICENSE).
+
+## Contributing 🤝
+
+Contributions are welcome! 🙌 If you find any issues or have ideas for improvements, please open an issue or submit a pull request. For major changes, it's recommended to discuss them first by creating an issue.
+
+## Active Development 🚧
+
+Please note that wh-wrapper is under active development, and breaking changes may be introduced as new features and improvements are implemented. However, the library is already usable and comes with comprehensive documentation (which is also a work in progress). 🔨
+
+--- Made with ❤️ and 🔨 by Elhanan

@@ -2,20 +2,25 @@
 import { EventEmitter } from "events";
 import { ResponseType } from "axios";
 import * as z from "zod";
-import { CommerceSettings, SendProductsParams } from "../messages/messageType";
-import Message from "../messages/message";
-import { Options, getDisplayNameStatus, WhatsAppProfileData, CreateTempleteResponse } from "../interfaces/client-interface";
-import { BooleanResponse, GetAllSubscriptions, MssageIDResponse, getPhoneNumberByID, getPhoneNumbers } from "../interfaces/whatsapp-response-interface";
-import MessageStatusHandler from "../messages/MessageStatusHandler";
+import Message from "../handlers/message-handler";
+import { getDisplayNameStatus, WhatsAppProfileData, CreateTempleteResponse } from "../interfaces/client-interface";
+import { GetAllSubscriptions, getPhoneNumbers } from "../interfaces/whatsapp-response-interface";
 import { CreateTempleteSchema, SendContacOptionSchema, SendTemplateSchema, UpdateBusinessProfileSchema, nameSchema, phoneSchema, sendMediaInteractiveSchema, sendMessageOptionsSchema } from "../schemas/schema";
+import Callback from "../handlers/callback-handler";
+import Update from "../handlers/update-handler";
+import RequestWelcome from "../handlers/request-welcome-handler";
+import { isSuccessResponse, SendMessageResponse } from "../types/internal-types";
+import { ClientOptions, GetPhoneDataReturn } from "../types/shared";
 type MessageHandlers = {
     messages: (message: Message) => void;
-    statuses: (statuses: MessageStatusHandler) => void;
+    statuses: (statuses: Update) => void;
+    callbacks: (callbacks: Callback) => void;
+    ChatOpened: (chat: RequestWelcome) => void;
 };
 export default class Client extends EventEmitter {
     private readonly phoneID;
     private readonly token;
-    private readonly verifyToken;
+    private readonly verifyToken?;
     private options;
     private _untypedOn;
     on: <K extends keyof MessageHandlers>(event: K, listener: MessageHandlers[K]) => this;
@@ -25,13 +30,12 @@ export default class Client extends EventEmitter {
         messaging_product: string;
         recipient_type: string;
     };
-    constructor(phoneID: string | number, token: string, verifyToken: string, options?: Partial<Options>);
+    constructor(phoneID: string | number, token: string, verifyToken?: string | undefined, options?: Partial<ClientOptions>);
     private initialize;
     private formatZodError;
     createFlow(): Promise<void>;
-    delete_flow(): Promise<void>;
+    deleteFlow(): Promise<void>;
     sendCatalog(): Promise<void>;
-    sendProduct({ to, catalogId, productSections, title, body, footer, replyToMessageId, }: SendProductsParams): Promise<MssageIDResponse | BooleanResponse>;
     createTemplate(template: z.infer<typeof CreateTempleteSchema>): Promise<CreateTempleteResponse & {
         templateName: string;
     }>;
@@ -39,13 +43,7 @@ export default class Client extends EventEmitter {
     private sendInteractiveMessage;
     sendTemplate(to: string, template: z.infer<typeof SendTemplateSchema>, options?: {
         messageID: string;
-    }): Promise<MssageIDResponse | BooleanResponse>;
-    updateCommerceSettings(settings: CommerceSettings): Promise<unknown>;
-    getCommerceSettings(): Promise<{
-        data: CommerceSettings & {
-            catalog_id: string;
-        }[];
-    }>;
+    }): Promise<SendMessageResponse | isSuccessResponse>;
     makeRequest<T>(config: {
         method: string;
         url: string;
@@ -56,10 +54,10 @@ export default class Client extends EventEmitter {
     }): Promise<T>;
     private _sendMessage;
     getPhoneNumbers(): Promise<getPhoneNumbers>;
-    getPhoneNumberByID(): Promise<getPhoneNumberByID>;
+    getPhoneData(): Promise<GetPhoneDataReturn>;
     getDisplayNameStatus(): Promise<getDisplayNameStatus>;
     getAllSubscriptions(): Promise<GetAllSubscriptions[]>;
-    deleteMedia(mediaID: string | number): Promise<BooleanResponse>;
+    deleteMedia(mediaID: string | number): Promise<boolean>;
     markMessageAsRead(messageID: string): Promise<boolean>;
     sendReaction(to: string, emoji: string, messageID: string): Promise<string>;
     removeReaction(to: string, messageID: string): Promise<string>;
@@ -95,6 +93,6 @@ export default class Client extends EventEmitter {
         headers?: object;
     }): Promise<T>;
     private _setCallBackUrl;
-    updateBusinessProfile(info: z.infer<typeof UpdateBusinessProfileSchema>): Promise<BooleanResponse>;
+    updateBusinessProfile(info: z.infer<typeof UpdateBusinessProfileSchema>): Promise<isSuccessResponse>;
 }
 export {};

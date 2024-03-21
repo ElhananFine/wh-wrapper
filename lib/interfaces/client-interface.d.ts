@@ -1,15 +1,3 @@
-import { Express } from "express";
-export interface Options {
-    baseURL: string;
-    apiVersion: string | number;
-    webHookEndpoint: string;
-    callbackUrl: string;
-    appID: string;
-    appSecret: string;
-    businessAccountID: string;
-    server: Express;
-    port: number;
-}
 export interface ReplyButton {
     type: "reply";
     reply: {
@@ -67,6 +55,27 @@ export interface SendContactOptions {
     org: Org;
     urls: Url | Url[];
 }
+export declare enum WhatsAppProfileVertical {
+    "UNDEFINED" = 0,
+    "OTHER" = 1,
+    "AUTO" = 2,
+    "BEAUTY" = 3,
+    "APPAREL" = 4,
+    "EDU" = 5,
+    "ENTERTAIN" = 6,
+    "EVENT_PLAN" = 7,
+    "FINANCE" = 8,
+    "GROCERY" = 9,
+    "GOVT" = 10,
+    "HOTEL" = 11,
+    "HEALTH" = 12,
+    "NONPROFIT" = 13,
+    "PROF_SERVICES" = 14,
+    "RETAIL" = 15,
+    "TRAVEL" = 16,
+    "RESTAURANT" = 17,
+    "NOT_A_BIZ" = 18
+}
 export interface WhatsAppProfileData {
     about: string;
     address: string;
@@ -74,7 +83,7 @@ export interface WhatsAppProfileData {
     email: string;
     profile_picture_url: string;
     websites: string[];
-    vertical: "UNDEFINED" | "OTHER" | "AUTO" | "BEAUTY" | "APPAREL" | "EDU" | "ENTERTAIN" | "EVENT_PLAN" | "FINANCE" | "GROCERY" | "GOVT" | "HOTEL" | "HEALTH" | "NONPROFIT" | "PROF_SERVICES" | "RETAIL" | "TRAVEL" | "RESTAURANT" | "NOT_A_BIZ";
+    vertical: WhatsAppProfileVertical;
     messaging_product?: string;
 }
 export interface getDisplayNameStatus {

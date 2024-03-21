@@ -4,27 +4,16 @@ import axios, { AxiosResponse, ResponseType, isAxiosError } from "axios";
 import fs from "fs";
 import FormData from "form-data";
 import * as z from "zod";
+import Message from "../handlers/message-handler";
 import {
-  CommerceSettings,
-  SendProductsParams,
-  WhatsAppBusinessAccountObject,
-} from "../messages/messageType";
-import Message from "../messages/message";
-import {
-  Options,
   getDisplayNameStatus,
   WhatsAppProfileData,
   CreateTempleteResponse,
 } from "../interfaces/client-interface";
 import {
-  BooleanResponse,
   GetAllSubscriptions,
-  MssageIDResponse,
-  getPhoneNumberByID,
   getPhoneNumbers,
 } from "../interfaces/whatsapp-response-interface";
-import { WhatsAppError } from "../errors/errors";
-import MessageStatusHandler from "../messages/MessageStatusHandler";
 import {
   CreateTempleteSchema,
   Language,
@@ -38,12 +27,35 @@ import {
   sendMessageOptionsSchema,
   sendMessageSchema,
 } from "../schemas/schema";
+import Callback from "../handlers/callback-handler";
+import Update from "../handlers/update-handler";
+import RequestWelcome from "../handlers/request-welcome-handler";
+import {
+  AuthError,
+  BillingError,
+  IntegrityError,
+  MessageError,
+  ParameterError,
+  RegistrationError,
+  TemplateError,
+  ThrottlingError,
+  UnknownError,
+} from "../errors/error-classes";
+import {
+  GetPhoneNumberByID,
+  isSuccessResponse,
+  SendMessageResponse,
+} from "../types/internal-types";
+import { ClientOptions, GetPhoneDataReturn } from "../types/shared";
 
 type MessageHandlers = {
   messages: (message: Message) => void;
-  statuses: (statuses: MessageStatusHandler) => void;
+  statuses: (statuses: Update) => void;
+  callbacks: (callbacks: Callback) => void;
+  ChatOpened: (chat: RequestWelcome) => void;
 };
 
+/** @constructor */
 export default class Client extends EventEmitter {
   private _untypedOn = this.on;
   public on = <K extends keyof MessageHandlers>(
@@ -57,10 +69,11 @@ export default class Client extends EventEmitter {
   constructor(
     private readonly phoneID: string | number,
     private readonly token: string,
-    private readonly verifyToken: string,
-    private options: Partial<Options> = {}
+    private readonly verifyToken?: string,
+    private options: Partial<ClientOptions> = {}
   ) {
     super();
+    console.clear();
 
     if (!this.phoneID || !this.token)
       throw new Error("Missing Parameters, phoneID and token are required");
@@ -79,7 +92,7 @@ export default class Client extends EventEmitter {
 
     this.axiosInstance.defaults.headers;
 
-    this.initialize();
+    if (this.verifyToken) this.initialize();
 
     if (this.options?.callbackUrl) {
       if (!this.options.appID || !this.options.appSecret)
@@ -87,7 +100,7 @@ export default class Client extends EventEmitter {
       else
         this._setCallBackUrl(
           this.options.callbackUrl,
-          this.options.appID,
+          this.options.appID.toString(),
           this.options.appSecret
         );
     }
@@ -122,30 +135,44 @@ export default class Client extends EventEmitter {
           : res.status(403).send("Error, invalid verification token");
       }
     );
-
     this.options.server.post(
       this.options?.webHookEndpoint || "/",
       (req: Request, res: Response) => {
         try {
-          const messageObject: WhatsAppBusinessAccountObject = req.body;
-          const field = messageObject.entry[0].changes[0].field;
-          const value = messageObject.entry[0].changes[0].value;
+          const field = req.body.entry[0].changes[0].field;
+          const value = req.body.entry[0].changes[0].value;
 
-          if (value.metadata.phone_number_id !== this.phoneID) return;
+          if (value.metadata.phone_number_id !== this.phoneID)
+            return res.status(200).send();
 
           if (field === "messages") {
             if ("messages" in value) {
-              this.emit("messages", new Message(this, messageObject));
+              if (value.messages[0].type === "interactive")
+                this.emit("callbacks", new Callback(this, value));
+              else if (
+                [
+                  "text",
+                  "image",
+                  "sticker",
+                  "video",
+                  "document",
+                  "audio",
+                  "location",
+                  "contacts",
+                  "unsupported",
+                ].includes(value.messages[0].type)
+              ) {
+                this.emit("messages", new Message(this, value));
+              } else if (value.messages![0].type === "request_welcome") {
+                this.emit("ChatOpened", new RequestWelcome(this, value));
+              } else return;
             } else if ("statuses" in value) {
-              this.emit("statuses", new MessageStatusHandler(messageObject));
-            } else {
+              this.emit("statuses", new Update(this, value));
             }
           }
-          res.status(200).send();
-        } catch (err) {
-          res
-            .status(500)
-            .send("Error! The correctness of the information must be checked");
+          return res.status(200).send();
+        } catch (e) {
+          res.status(500).send();
         }
       }
     );
@@ -162,34 +189,34 @@ export default class Client extends EventEmitter {
 
   // flows
   async createFlow() {}
-  async delete_flow() {}
+  async deleteFlow() {}
   public async sendCatalog() {}
-  public async sendProduct({
-    to,
-    catalogId,
-    productSections,
-    title,
-    body,
-    footer,
-    replyToMessageId,
-  }: SendProductsParams) {
-    const action = {
-      catalog_id: catalogId,
-      sections: productSections.map((section) => ({
-        title: section.title,
-        product_items: section.skus.map((sku) => ({ productRetailerId: sku })),
-      })),
-    };
+  // public async sendProduct({
+  //   to,
+  //   catalogId,
+  //   productSections,
+  //   title,
+  //   body,
+  //   footer,
+  //   replyToMessageId,
+  // }: SendProductsParams) {
+  //   const action = {
+  //     catalog_id: catalogId,
+  //     sections: productSections.map((section) => ({
+  //       title: section.title,
+  //       product_items: section.skus.map((sku) => ({ productRetailerId: sku })),
+  //     })),
+  //   };
 
-    return await this._sendMessage({
-      to,
-      type: "interactive",
-      interactive: {
-        type: "product_list",
-        action,
-      },
-    });
-  }
+  //   return await this._sendMessage({
+  //     to,
+  //     type: "interactive",
+  //     interactive: {
+  //       type: "product_list",
+  //       action,
+  //     },
+  //   });
+  // }
 
   public async createTemplate(
     template: z.infer<typeof CreateTempleteSchema>
@@ -423,7 +450,7 @@ export default class Client extends EventEmitter {
           ...data,
           type: "text",
           text: { body: text, preview_url: options?.previewUrl },
-        })) as MssageIDResponse
+        })) as SendMessageResponse
       ).messages[0].id;
     } else return await this.sendInteractiveMessage(to, text, options);
   }
@@ -505,7 +532,7 @@ export default class Client extends EventEmitter {
           }),
           action: buttonObject,
         },
-      })) as MssageIDResponse
+      })) as SendMessageResponse
     ).messages[0].id;
   }
 
@@ -625,32 +652,32 @@ export default class Client extends EventEmitter {
     });
   }
 
-  public async updateCommerceSettings(settings: CommerceSettings) {
-    if (!settings.isCartEnabled && !settings.isCatalogVisible) {
-      throw new Error("At least one setting must be provided");
-    }
-    const data = {
-      is_cart_enabled: settings.isCartEnabled,
-      is_catalog_visible: settings.isCatalogVisible,
-    };
+  // public async updateCommerceSettings(settings: CommerceSettings) {
+  //   if (!settings.isCartEnabled && !settings.isCatalogVisible) {
+  //     throw new Error("At least one setting must be provided");
+  //   }
+  //   const data = {
+  //     is_cart_enabled: settings.isCartEnabled,
+  //     is_catalog_visible: settings.isCatalogVisible,
+  //   };
 
-    // add type UpdateCommerceSettingsResponse to makeRequest funtion
+  //   // add type UpdateCommerceSettingsResponse to makeRequest funtion
 
-    return await this.makeRequest({
-      method: "POST",
-      url: `/${this.phoneID}/whatsapp_commerce_settings`,
-      params: data,
-    });
-  }
+  //   return await this.makeRequest({
+  //     method: "POST",
+  //     url: `/${this.phoneID}/whatsapp_commerce_settings`,
+  //     params: data,
+  //   });
+  // }
 
-  public async getCommerceSettings() {
-    return await this.makeRequest<{
-      data: CommerceSettings & { catalog_id: string }[];
-    }>({
-      method: "GET",
-      url: `/${this.phoneID}/whatsapp_commerce_settings`,
-    });
-  }
+  // public async getCommerceSettings() {
+  //   return await this.makeRequest<{
+  //     data: CommerceSettings & { catalog_id: string }[];
+  //   }>({
+  //     method: "GET",
+  //     url: `/${this.phoneID}/whatsapp_commerce_settings`,
+  //   });
+  // }
 
   // נבדק
   // הוספת טיפול מותאם אישית בשגיאות
@@ -670,20 +697,50 @@ export default class Client extends EventEmitter {
     } catch (e: any) {
       if (isAxiosError(e)) {
         const response = e.response!;
-        throw new WhatsAppError(
-          +response.data.error.code,
-          response.data.error.message,
-          response.data.error.fbtrace_id,
-          response.data.error.type,
-          response.data.error.error_data?.details
-        );
+        const code = response.data.error.code;
+        const message = response.data.error.message;
+        const fbtrace_id = response.data.error?.fbtrace_id;
+        const type = response.data.error.type;
+        const details = response.data.error.error_data?.details;
+
+        switch (true) {
+          case [0, 3, 10, 190, 200].includes(code):
+            throw new AuthError(code, message, fbtrace_id, type, details);
+          case [4, 80007, 130429, 131048, 131056, 133016].includes(code):
+            throw new ThrottlingError(code, message, fbtrace_id, type, details);
+          case [368, 131031].includes(code):
+            throw new IntegrityError(code, message, fbtrace_id, type, details);
+          case [100, 131008, 131009].includes(code):
+            throw new ParameterError(code, message, fbtrace_id, type, details);
+          case [131021, 131026, 131047, 131051, 131052, 131053].includes(code):
+            throw new MessageError(code, message, fbtrace_id, type, details);
+          case [
+            132000, 132001, 132005, 132007, 132012, 132015, 132016, 132068,
+            132069,
+          ].includes(code):
+            throw new TemplateError(code, message, fbtrace_id, type, details);
+          case [
+            133000, 133004, 133005, 133006, 133008, 133009, 133010, 133015,
+          ].includes(code):
+            throw new RegistrationError(
+              code,
+              message,
+              fbtrace_id,
+              type,
+              details
+            );
+          case [131042].includes(code):
+            throw new BillingError(code, message, fbtrace_id, type, details);
+          default:
+            throw new UnknownError(code, message, fbtrace_id, type, details);
+        }
       } else {
-        throw new Error(e);
+        throw new Error("unknown error");
       }
     }
   }
   private async _sendMessage(content: object) {
-    return await this.makeRequest<MssageIDResponse | BooleanResponse>({
+    return await this.makeRequest<SendMessageResponse | isSuccessResponse>({
       method: "POST",
       url: `/${this.phoneID}/messages`,
       data: {
@@ -701,13 +758,21 @@ export default class Client extends EventEmitter {
       url: `/${this.options?.businessAccountID}/phone_numbers/`,
     });
   }
-  public async getPhoneNumberByID(): Promise<getPhoneNumberByID> {
-    return await this.makeRequest<getPhoneNumberByID>({
+  public async getPhoneData(): Promise<GetPhoneDataReturn> {
+    const r = await this.makeRequest<GetPhoneNumberByID>({
       method: "GET",
       url: `/${this.phoneID}/`,
     });
+    return {
+      verifiedName: r.verified_name,
+      phoneNumber: r.display_phone_number,
+      qualityRating: r.quality_rating,
+      platformType: r.quality_rating,
+      phoneNumberID: r.id,
+    };
   }
-  public async getDisplayNameStatus(): Promise<getDisplayNameStatus> {
+
+  public async getNameStatus(): Promise<getDisplayNameStatus> {
     return await this.makeRequest<getDisplayNameStatus>({
       method: "GET",
       url: `/${this.phoneID}/`,
@@ -727,13 +792,14 @@ export default class Client extends EventEmitter {
       })
     ).data;
   }
-  public async deleteMedia(mediaID: string | number): Promise<BooleanResponse> {
-    // add type DeleteMedia
-    return await this.makeRequest<BooleanResponse>({
-      method: "DELETE",
-      url: `/${mediaID.toString()}`,
-      params: { phone_number_id: this.phoneID },
-    });
+  public async deleteMedia(mediaID: string | number): Promise<boolean> {
+    return (
+      await this.makeRequest<isSuccessResponse>({
+        method: "DELETE",
+        url: `/${mediaID.toString()}`,
+        params: { phone_number_id: this.phoneID },
+      })
+    ).success;
   }
   public async markMessageAsRead(messageID: string): Promise<boolean> {
     const data = {
@@ -741,7 +807,7 @@ export default class Client extends EventEmitter {
       status: "read",
       message_id: messageID,
     };
-    return ((await this._sendMessage(data)) as BooleanResponse).success;
+    return ((await this._sendMessage(data)) as isSuccessResponse).success;
   }
   public async sendReaction(
     to: string,
@@ -757,7 +823,8 @@ export default class Client extends EventEmitter {
       },
     };
 
-    return ((await this._sendMessage(data)) as MssageIDResponse).messages[0].id;
+    return ((await this._sendMessage(data)) as SendMessageResponse).messages[0]
+      .id;
   }
   public async removeReaction(to: string, messageID: string): Promise<string> {
     return await this.sendReaction(to, messageID, "");
@@ -778,7 +845,8 @@ export default class Client extends EventEmitter {
         ...options,
       },
     };
-    return ((await this._sendMessage(data)) as MssageIDResponse).messages[0].id;
+    return ((await this._sendMessage(data)) as SendMessageResponse).messages[0]
+      .id;
   }
   async getBusinessProfile(): Promise<
     Omit<WhatsAppProfileData, "messaging_product">
@@ -892,6 +960,7 @@ export default class Client extends EventEmitter {
   ): Promise<string> {
     return await this.sendMedia("DOCUMENT", to, document, options);
   }
+
   async sendAudio(
     to: string,
     audio: string,
@@ -927,7 +996,7 @@ export default class Client extends EventEmitter {
             ...(type === "DOCUMENT" &&
               options?.filename && { filename: options?.filename }),
           },
-        })) as MssageIDResponse
+        })) as SendMessageResponse
       ).messages[0].id;
     } else {
       if (!options.capiton) throw new Error("לא ניתן לספק כפתורים ללא תיאור");
@@ -1019,7 +1088,7 @@ export default class Client extends EventEmitter {
             }),
           },
         ],
-      })) as MssageIDResponse
+      })) as SendMessageResponse
     ).messages[0].id;
   }
 
@@ -1058,19 +1127,14 @@ export default class Client extends EventEmitter {
         callback_url: callbackUrl + "/" + this.options.webHookEndpoint || "",
         verify_token: this.verifyToken,
         access_token: getAppAcsessToken.access_token,
-        fields: [
-          "template_category_update",
-          "messages",
-          "message_template_status_update",
-          "message_template_quality_update",
-        ].join(","),
+        fields: ["message_template_status_update", "messages"].join(","),
       },
     });
   }
 
   async updateBusinessProfile(
     info: z.infer<typeof UpdateBusinessProfileSchema>
-  ): Promise<BooleanResponse> {
+  ): Promise<isSuccessResponse> {
     const validation = UpdateBusinessProfileSchema.safeParse(info);
 
     if (!validation.success) {
@@ -1084,15 +1148,15 @@ export default class Client extends EventEmitter {
         description: info.description,
         email: info.email,
         profile_picture_handle: info.profilePictureHandle,
-        vertical: info.industry?.toLowerCase(),
+        vertical: info.industry.toString().toLowerCase(),
         websites: info.websites,
       }).filter(([_, v]) => v != null && v !== "")
     );
 
-    return (await this.makeRequest<BooleanResponse>({
+    return (await this.makeRequest<isSuccessResponse>({
       url: `/${this.phoneID}/whatsapp_business_profile`,
       method: "POST",
       data,
-    })) as BooleanResponse;
+    })) as isSuccessResponse;
   }
 }

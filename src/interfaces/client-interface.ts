@@ -1,17 +1,3 @@
-import { Express } from "express";
-
-export interface Options {
-  baseURL: string;
-  apiVersion: string | number;
-  webHookEndpoint: string;
-  callbackUrl: string;
-  appID: string;
-  appSecret: string;
-  businessAccountID: string;
-  server: Express;
-  port: number;
-}
-
 export interface ReplyButton {
   type: "reply";
   reply: {
@@ -78,6 +64,28 @@ export interface SendContactOptions {
   urls: Url | Url[];
 }
 
+export enum WhatsAppProfileVertical {
+  "UNDEFINED",
+  "OTHER",
+  "AUTO",
+  "BEAUTY",
+  "APPAREL",
+  "EDU",
+  "ENTERTAIN",
+  "EVENT_PLAN",
+  "FINANCE",
+  "GROCERY",
+  "GOVT",
+  "HOTEL",
+  "HEALTH",
+  "NONPROFIT",
+  "PROF_SERVICES",
+  "RETAIL",
+  "TRAVEL",
+  "RESTAURANT",
+  "NOT_A_BIZ",
+}
+
 export interface WhatsAppProfileData {
   about: string;
   address: string;
@@ -85,26 +93,7 @@ export interface WhatsAppProfileData {
   email: string;
   profile_picture_url: string;
   websites: string[];
-  vertical:
-    | "UNDEFINED"
-    | "OTHER"
-    | "AUTO"
-    | "BEAUTY"
-    | "APPAREL"
-    | "EDU"
-    | "ENTERTAIN"
-    | "EVENT_PLAN"
-    | "FINANCE"
-    | "GROCERY"
-    | "GOVT"
-    | "HOTEL"
-    | "HEALTH"
-    | "NONPROFIT"
-    | "PROF_SERVICES"
-    | "RETAIL"
-    | "TRAVEL"
-    | "RESTAURANT"
-    | "NOT_A_BIZ";
+  vertical: WhatsAppProfileVertical;
   messaging_product?: string;
 }
 

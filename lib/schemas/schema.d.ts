@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { WhatsAppProfileVertical } from "../interfaces/client-interface";
 export declare const Language: {
     readonly AFRIKAANS: "af";
     readonly ALBANIAN: "sq";
@@ -419,8 +420,8 @@ export declare const sendMessageSchema: z.ZodObject<{
         } | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
-    text: string;
     to: string;
+    text: string;
     options?: {
         previewUrl?: boolean | undefined;
         messageID?: string | undefined;
@@ -448,8 +449,8 @@ export declare const sendMessageSchema: z.ZodObject<{
         } | undefined;
     } | undefined;
 }, {
-    text: string;
     to: string;
+    text: string;
     options?: {
         previewUrl?: boolean | undefined;
         messageID?: string | undefined;
@@ -482,23 +483,23 @@ export declare const UpdateBusinessProfileSchema: z.ZodObject<{
     address: z.ZodOptional<z.ZodString>;
     description: z.ZodOptional<z.ZodString>;
     email: z.ZodOptional<z.ZodString>;
-    industry: z.ZodOptional<z.ZodEnum<["UNDEFINED", "OTHER", "AUTO", "BEAUTY", "APPAREL", "EDU", "ENTERTAIN", "EVENT_PLAN", "FINANCE", "GROCERY", "GOVT", "HOTEL", "HEALTH", "NONPROFIT", "PROF_SERVICES", "RETAIL", "TRAVEL", "RESTAURANT", "NOT_A_BIZ"]>>;
+    industry: z.ZodNativeEnum<typeof WhatsAppProfileVertical>;
     profilePictureHandle: z.ZodOptional<z.ZodString>;
     websites: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
+    industry: WhatsAppProfileVertical;
     about?: string | undefined;
     address?: string | undefined;
     description?: string | undefined;
     email?: string | undefined;
-    industry?: "UNDEFINED" | "OTHER" | "AUTO" | "BEAUTY" | "APPAREL" | "EDU" | "ENTERTAIN" | "EVENT_PLAN" | "FINANCE" | "GROCERY" | "GOVT" | "HOTEL" | "HEALTH" | "NONPROFIT" | "PROF_SERVICES" | "RETAIL" | "TRAVEL" | "RESTAURANT" | "NOT_A_BIZ" | undefined;
     profilePictureHandle?: string | undefined;
     websites?: string[] | undefined;
 }, {
+    industry: WhatsAppProfileVertical;
     about?: string | undefined;
     address?: string | undefined;
     description?: string | undefined;
     email?: string | undefined;
-    industry?: "UNDEFINED" | "OTHER" | "AUTO" | "BEAUTY" | "APPAREL" | "EDU" | "ENTERTAIN" | "EVENT_PLAN" | "FINANCE" | "GROCERY" | "GOVT" | "HOTEL" | "HEALTH" | "NONPROFIT" | "PROF_SERVICES" | "RETAIL" | "TRAVEL" | "RESTAURANT" | "NOT_A_BIZ" | undefined;
     profilePictureHandle?: string | undefined;
     websites?: string[] | undefined;
 }>;
@@ -511,11 +512,11 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: z.ZodLiteral<"TEXT">;
         text: z.ZodEffects<z.ZodString, string, string>;
     }, "strip", z.ZodTypeAny, {
-        text: string;
         type: "TEXT";
+        text: string;
     }, {
-        text: string;
         type: "TEXT";
+        text: string;
     }>, z.ZodObject<{
         type: z.ZodEnum<["IMAGE", "DOCUMENT", "VIDEO"]>;
         media: z.ZodString;
@@ -571,11 +572,11 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: z.ZodLiteral<"QuickReplyButton">;
         text: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     }, {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     }>>, z.ZodOptional<z.ZodObject<{
         type: z.ZodLiteral<"CopyCodeButton">;
         example: z.ZodString;
@@ -649,11 +650,11 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: z.ZodLiteral<"QuickReplyButton">;
         text: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     }, {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     }>>, z.ZodOptional<z.ZodObject<{
         type: z.ZodLiteral<"CopyCodeButton">;
         example: z.ZodString;
@@ -713,8 +714,8 @@ export declare const CreateTempleteSchema: z.ZodObject<{
     } | undefined);
     allowCategoryChange?: boolean | undefined;
     header?: {
-        text: string;
         type: "TEXT";
+        text: string;
     } | {
         type: "IMAGE" | "DOCUMENT" | "VIDEO";
         media: string;
@@ -731,8 +732,8 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -757,8 +758,8 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -788,8 +789,8 @@ export declare const CreateTempleteSchema: z.ZodObject<{
     } | undefined);
     allowCategoryChange?: boolean | undefined;
     header?: {
-        text: string;
         type: "TEXT";
+        text: string;
     } | {
         type: "IMAGE" | "DOCUMENT" | "VIDEO";
         media: string;
@@ -806,8 +807,8 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -832,8 +833,8 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -1566,11 +1567,11 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: z.ZodLiteral<"QuickReplyButton">;
         text: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     }, {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     }>>, z.ZodOptional<z.ZodObject<{
         type: z.ZodLiteral<"CopyCodeButton">;
         example: z.ZodString;
@@ -1644,11 +1645,11 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: z.ZodLiteral<"QuickReplyButton">;
         text: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     }, {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     }>>, z.ZodOptional<z.ZodObject<{
         type: z.ZodLiteral<"CopyCodeButton">;
         example: z.ZodString;
@@ -1730,8 +1731,8 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -1756,8 +1757,8 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -1809,8 +1810,8 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -1835,8 +1836,8 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        text: string;
         type: "QuickReplyButton";
+        text: string;
     } | {
         type: "CopyCodeButton";
         example: string;
