@@ -32,6 +32,8 @@ Initialize a new WhatsApp client instance and start sending and receiving messag
 
 ```javascript
 import Client from 'wh-wrapper';
+// or if using require:
+// const Client = require('wh-wrapper');
 
 const wh = new Client(phoneID, token);
 
@@ -46,6 +48,8 @@ const messageId = await wh.sendMessage(recipientPhoneNumber, 'Hello, World!');
 
 ```javascript
 import Client from 'wh-wrapper';
+// or if using require:
+// const Client = require('wh-wrapper');
 
 const verifyToken = 'your_verify_token';
 
@@ -53,6 +57,9 @@ const wh = new Client(phoneID, token, verifyToken);
 
 wh.on('messages', async (message) => {
   console.log(message); // Handle incoming messages here
+});
+wh.on("statuses", async (status) => {
+  console.log(status); // Handle incoming statuses here
 });
 ```
 
