@@ -887,11 +887,11 @@ export declare const phoneSchema: z.ZodUnion<[z.ZodString, z.ZodObject<{
     waID: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     phone?: string | undefined;
-    type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+    type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
     waID?: string | undefined;
 }, {
     phone?: string | undefined;
-    type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+    type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
     waID?: string | undefined;
 }>, z.ZodArray<z.ZodObject<{
     phone: z.ZodOptional<z.ZodString>;
@@ -899,11 +899,11 @@ export declare const phoneSchema: z.ZodUnion<[z.ZodString, z.ZodObject<{
     waID: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     phone?: string | undefined;
-    type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+    type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
     waID?: string | undefined;
 }, {
     phone?: string | undefined;
-    type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+    type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
     waID?: string | undefined;
 }>, "many">]>;
 export declare const SendContacOptionSchema: z.ZodObject<{
@@ -1132,11 +1132,11 @@ export declare const SendContacSchema: z.ZodObject<{
         waID: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
     }, {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
     }>, z.ZodArray<z.ZodObject<{
         phone: z.ZodOptional<z.ZodString>;
@@ -1144,11 +1144,11 @@ export declare const SendContacSchema: z.ZodObject<{
         waID: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
     }, {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
     }>, "many">]>;
     options: z.ZodObject<{
@@ -1392,19 +1392,19 @@ export declare const SendContacSchema: z.ZodObject<{
     } | undefined);
     phones: (string | {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
     } | {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
     }[]) & (string | {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
     } | {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
     }[] | undefined);
 }, {
@@ -1466,19 +1466,19 @@ export declare const SendContacSchema: z.ZodObject<{
     } | undefined);
     phones: (string | {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
     } | {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
     }[]) & (string | {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
     } | {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "IPHONE" | "CELL" | "MAIN" | undefined;
+        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
     }[] | undefined);
 }>;

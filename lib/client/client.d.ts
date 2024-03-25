@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { EventEmitter } from "events";
+import { ResponseType } from "axios";
 import * as z from "zod";
 import Message from "../handlers/message-handler";
 import { CreateTempleteSchema, SendContacOptionSchema, SendTemplateSchema, UpdateBusinessProfileSchema, nameSchema, phoneSchema, sendMediaInteractiveSchema, sendMessageOptionsSchema } from "../schemas/schema";
@@ -30,7 +31,14 @@ export default class Client extends EventEmitter {
     constructor(phoneID: string | number, token: string, verifyToken?: string | undefined, options?: Partial<ClientOptions>);
     private initialize;
     private setCallBackUrl;
-    private makeRequest;
+    makeRequest<T>(config: {
+        method: string;
+        url: string;
+        data?: object;
+        headers?: object;
+        params?: object;
+        responseType?: ResponseType;
+    }): Promise<T>;
     createTemplate(template: z.infer<typeof CreateTempleteSchema>): Promise<CreateTempleteResponse & {
         templateName: string;
     }>;

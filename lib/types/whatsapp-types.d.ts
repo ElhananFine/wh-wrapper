@@ -1,41 +1,5 @@
-import { ConversationCategory, HomeWork, LocationType, MediaBase, ReactionType } from "./shared";
+import { Contact, ConversationCategory, LocationType, MediaBase, ReactionType } from "./shared";
 export type MessageType = "text" | "image" | "video" | "sticker" | "document" | "location" | "audio" | "reaction" | "interactive" | "contacts" | "unsupported" | "order" | "system" | "request_welcome" | "errors";
-interface Contact {
-    name: {
-        formatted_name: string;
-        first_name?: string;
-        last_name?: string;
-        middle_name?: string;
-    };
-    birthday?: string;
-    phones: Partial<{
-        phone: string;
-        type: HomeWork & "CELL";
-        WhId: string;
-    }>[];
-    emails?: Partial<{
-        email?: string;
-        type?: HomeWork;
-    }>[];
-    urls?: Partial<{
-        url?: string;
-        type?: string;
-    }>[];
-    addresses?: Partial<{
-        street: string;
-        city: string;
-        state: string;
-        zip: string;
-        country: string;
-        country_code: string;
-        type: HomeWork;
-    }>[];
-    org?: Partial<{
-        company: string;
-        department: string;
-        title: string;
-    }>;
-}
 type Text = {
     type: "text";
     text: {
@@ -125,12 +89,19 @@ export type MessageValueType<T extends "messages" | "statuses"> = {
         id: string;
         timestamp: string;
     } & MesaageTypes & {
-        context?: Partial<{
+        context?: {
+            forwarded?: boolean;
+            frequently_forwarded?: boolean;
+        } & ({
             from: string;
             id: string;
-            forwarded: boolean;
-            frequently_forwarded: boolean;
-        }>;
+        } | ({
+            from?: never;
+            id?: never;
+        } & {
+            forwarded?: boolean;
+            frequently_forwarded?: boolean;
+        }));
     }>;
     statuses?: never;
 } : {

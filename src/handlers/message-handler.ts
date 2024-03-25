@@ -2,17 +2,31 @@ import path from "path";
 import { existsSync, mkdirSync, writeFileSync, promises as fsPromises, constants as fsConstants } from "fs";
 import Client from "../client/client";
 import { BaseHandler } from "./base-handler";
-import { MessageType, MessageValueType } from "../types/whatsapp-types";
-import { Image, Sticker, Video, Document, Audio, Location, Reaction, Contacts, Error } from "../types/exports-types";
+import type { MessageType, MessageValueType } from "../types/whatsapp-types";
+import type {
+    Image,
+    Sticker,
+    Video,
+    Document,
+    Audio,
+    Location,
+    Reaction,
+    Error,
+    Context,
+    Media,
+} from "../types/exports-types";
+import type { Contact } from "../types/shared";
 
 type MessageTypes = Exclude<MessageType, "order" | "system" | "interactive" | "request_welcome" | "errors">;
+
 /** @constructor */
 export default class Message extends BaseHandler {
-    type: MessageType;
+    type: MessageTypes;
     timestamp: Date;
     forwarded: boolean;
     forwardedManyTimes?: boolean;
     isReply: boolean;
+    context?: Context;
     hasMedia: boolean;
     text?: string;
     image?: Image;
@@ -22,7 +36,7 @@ export default class Message extends BaseHandler {
     audio?: Audio;
     location?: Location;
     reaction?: Reaction;
-    contacts?: Contacts;
+    contacts?: Contact[];
     error?: Error;
     constructor(client: Client, value: MessageValueType<"messages">) {
         if (!(client instanceof Client)) throw new Error("Invalid client - must be instance of Client");
@@ -32,10 +46,12 @@ export default class Message extends BaseHandler {
         this.forwarded = value.messages[0].context?.forwarded || value.messages[0].context?.frequently_forwarded || false;
         if (this.forwarded) this.forwardedManyTimes = value.messages[0].context?.frequently_forwarded || false;
         this.isReply = !!value.messages[0].context;
-        this.hasMedia = ["image", "video", "sticker", "document", "audio"].includes(
-            // @ts-ignore
-            this.type
-        );
+        if (value.messages[0].context?.from)
+            this.context = {
+                messageFrom: value.messages[0].context.from,
+                messageID: value.messages[0].context.id,
+            };
+        this.hasMedia = ["image", "video", "sticker", "document", "audio"].includes(this.type);
 
         switch (value.messages[0].type) {
             case "text":
@@ -64,9 +80,10 @@ export default class Message extends BaseHandler {
                 break;
             case "document":
                 this.document = Object.fromEntries(
-                    Object.entries(value.messages[0].document)
-                        .filter(([key]) => key !== "mime_type")
-                        .concat([["mimeType", value.messages[0].document.mime_type]])
+                    Object.entries(value.messages[0].document).map(([key, value]) => [
+                        key === "filename" ? "fileName" : key === "mime_type" ? "mimeType" : key,
+                        value,
+                    ])
                 ) as Document;
                 break;
             case "audio":
@@ -97,31 +114,25 @@ export default class Message extends BaseHandler {
                 };
                 break;
             case "contacts":
-                this.contacts = value.messages[0].contacts.map((contact) => ({
-                    name: {
-                        formattedName: contact.name.formatted_name,
-                        ...(contact.name.first_name && {
-                            firstName: contact.name.first_name,
-                        }),
-                        ...(contact.name.last_name && {
-                            lastName: contact.name.last_name,
-                        }),
-                        ...(contact.name.middle_name && {
-                            middleName: contact.name.middle_name,
-                        }),
-                    },
-                    phome: contact.phones.map((phone) => ({
-                        phone: phone.phone,
-                        type: phone.type,
-                        waID: phone.WhId,
-                    })),
-                }));
+                this.contacts = value.messages[0].contacts;
                 break;
         }
         Object.defineProperty(this, "client", { enumerable: false });
     }
 
-    async downloadMedia(options?: { saveInDisk?: boolean; fileName?: string; folderPath?: string }) {
+    /**
+     * Downloads the media of the message if it exists.
+     *
+     * @param {boolean} [saveToFile=false] - Whether to save the media to a file or return it as a buffer.
+     * @param {string} [fileName] - The name of the file to save the media as (required only if `saveToFile` is `true`).
+     * @param {string} [folderPath] - The path to the folder where the media should be saved (required only if `saveToFile` is `true`; otherwise, the default is the `files` folder in the project directory).
+     * @returns {Promise<{ mimeType: string; fileSize: string; filePath: string }> | Promise<{ mimeType: string; fileSize: string; fileBuffer: Buffer }>}
+     * @throws {Error} If there is no media in the message or if there is an issue with folder permissions.
+     */
+
+    async downloadMedia(saveToFile: boolean = false, fileName?: string, folderPath?: string): Promise<Media> {
+        type MediaType = "image" | "video" | "sticker" | "document" | "audio";
+
         if (!this.hasMedia) throw new Error("There is no media in the message");
 
         try {
@@ -134,55 +145,61 @@ export default class Message extends BaseHandler {
                 id: string;
             }>({
                 method: "GET",
-                url: `${this.client.url}/${this[this.type]!.id}`,
+                url: `${this.client.url}/${this[this.type as MediaType]!.id}`,
                 params: { phone_number_id: this.metadata.phoneNumberID },
             });
 
-            const fileRequest: string = await this.client.makeRequest({
+            const fileBuffer: Buffer = await this.client.makeRequest<Buffer>({
                 method: "GET",
                 url: linkRequest.url.trim(),
                 responseType: "arraybuffer",
             });
 
-            const base64 = Buffer.from(fileRequest, "binary").toString("base64");
+            const userDirectoryPath = process.cwd(); // Get the current working directory
+            const filesDirectoryPath = folderPath || path.join(userDirectoryPath, "files");
 
-            const returnValues: any = {
-                mimeType: linkRequest.mime_type,
-                fileSize: linkRequest.file_size,
-                ...(this.type === "document" && { fileName: this[this.type].filename }),
-                mediaID: linkRequest.id,
-            };
-
-            if (options?.saveInDisk) {
-                const dirPath = options.folderPath || path.join(__dirname, "../../files");
-
-                if (!existsSync(dirPath)) mkdirSync(dirPath);
-
+            if (!existsSync(filesDirectoryPath)) {
                 try {
-                    await fsPromises.access(dirPath, fsConstants.R_OK);
-                    const fileName = path.join(
-                        dirPath,
-                        `${
-                            options?.fileName?.replace(/[\/\\:*?"<>|]/g, "") ||
-                            this[this.type].filename + "-" + linkRequest.id
-                        }.${linkRequest.mime_type.split("/")[1]}`
-                    );
-                    writeFileSync(fileName, base64, "base64");
-
-                    returnValues.path = fileName;
-                } catch (e) {
-                    throw new Error("אין הרשאת כתיבה לתיקייה");
+                    mkdirSync(filesDirectoryPath, { recursive: true });
+                } catch (e: any) {
+                    if (e.code === "EACCES") {
+                        throw new Error("No permission to create the folder");
+                    } else {
+                        throw e;
+                    }
                 }
-            } else {
-                returnValues.base64 = base64;
             }
 
-            return returnValues;
+            if (saveToFile) {
+                try {
+                    await fsPromises.access(filesDirectoryPath, fsConstants.R_OK | fsConstants.W_OK);
+                    const filePath = path.join(
+                        filesDirectoryPath,
+                        `${fileName?.replace(/[\\/:\*?"<>|]/g, "") || linkRequest.url.split("hash=")[1]}.${
+                            linkRequest.mime_type.split("/")[1]
+                        }`
+                    );
+                    writeFileSync(filePath, fileBuffer);
+                    return { mimeType: linkRequest.mime_type, fileSize: linkRequest.file_size, filePath };
+                } catch (e: any) {
+                    if (e.code === "EACCES") {
+                        throw new Error("No write access to the folder");
+                    } else {
+                        throw e;
+                    }
+                }
+            } else {
+                return { mimeType: linkRequest.mime_type, fileSize: linkRequest.file_size, fileBuffer };
+            }
         } catch (e) {
             throw e;
         }
     }
 
+    /**
+     * Mark this message as read.
+     * @returns {Promise<boolean>} A Promise that resolves with a boolean indicating whether the message was successfully marked as read.
+     */
     async markMessageAsRead(): Promise<boolean> {
         return await this.client.markMessageAsRead(this.id);
     }

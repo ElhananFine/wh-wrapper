@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { ClientOptions, GetPhoneDataReturn, HomeWork, LocationType, MediaBase, ReactionType } from "./shared";
 export type Metadata = {
     displayPhoneNumber: string;
@@ -7,7 +8,10 @@ export type FromUser = {
     name?: string;
     WhID: string;
 };
-export type Context = {};
+export type Context = {
+    messageFrom: string;
+    messageID: string;
+};
 export type Image = Omit<MediaBase, "mime_type"> & {
     mimeType: string;
     caption?: string;
@@ -54,3 +58,12 @@ export type Error = {
 };
 export type Options = ClientOptions;
 export type GetPhoneData = GetPhoneDataReturn;
+export type Media = {
+    mimeType: string;
+    fileSize: string;
+    filePath: string;
+} | {
+    mimeType: string;
+    fileSize: string;
+    fileBuffer: Buffer;
+};

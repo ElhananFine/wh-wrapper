@@ -1,13 +1,16 @@
 import Client from "../client/client";
 import { BaseHandler } from "./base-handler";
-import { MessageType, MessageValueType } from "../types/whatsapp-types";
-import { Image, Sticker, Video, Document, Audio, Location, Reaction, Contacts, Error } from "../types/exports-types";
+import type { MessageType, MessageValueType } from "../types/whatsapp-types";
+import type { Image, Sticker, Video, Document, Audio, Location, Reaction, Error, Context, Media } from "../types/exports-types";
+import type { Contact } from "../types/shared";
+type MessageTypes = Exclude<MessageType, "order" | "system" | "interactive" | "request_welcome" | "errors">;
 export default class Message extends BaseHandler {
-    type: MessageType;
+    type: MessageTypes;
     timestamp: Date;
     forwarded: boolean;
     forwardedManyTimes?: boolean;
     isReply: boolean;
+    context?: Context;
     hasMedia: boolean;
     text?: string;
     image?: Image;
@@ -17,13 +20,10 @@ export default class Message extends BaseHandler {
     audio?: Audio;
     location?: Location;
     reaction?: Reaction;
-    contacts?: Contacts;
+    contacts?: Contact[];
     error?: Error;
     constructor(client: Client, value: MessageValueType<"messages">);
-    downloadMedia(options?: {
-        saveInDisk?: boolean;
-        fileName?: string;
-        folderPath?: string;
-    }): Promise<any>;
+    downloadMedia(saveToFile?: boolean, fileName?: string, folderPath?: string): Promise<Media>;
     markMessageAsRead(): Promise<boolean>;
 }
+export {};

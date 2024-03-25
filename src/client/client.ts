@@ -196,7 +196,7 @@ export default class Client extends EventEmitter {
             },
         });
     }
-    private async makeRequest<T>(config: {
+    async makeRequest<T>(config: {
         method: string;
         url: string;
         data?: object;
