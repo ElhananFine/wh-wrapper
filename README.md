@@ -1,6 +1,7 @@
 # wh-wrapper
 
- [![npm](https://img.shields.io/npm/v/wh-wrapper)](https://www.npmjs.com/package/wh-wrapper) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Issues](https://img.shields.io/github/issues/ElhananFine/wh-wrapper)](https://github.com/ElhananFine/wh-wrapper/issues)
+ [![npm](https://img.shields.io/npm/v/wh-wrapper)](https://www.npmjs.com/package/wh-wrapper) [![Downloads](https://img.shields.io/npm/dw/wh-wrapper)]((https://www.npmjs.com/package/wh-wrapper)) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Issues](https://img.shields.io/github/issues/ElhananFine/wh-wrapper)](https://github.com/ElhananFine/wh-wrapper/issues)
+
 
 wh-wrapper is a robust and developer-friendly wrapper library for the WhatsApp Cloud API, meticulously crafted to streamline the process of building powerful and feature-rich WhatsApp bots. 🤖 With this library, you can seamlessly integrate WhatsApp messaging capabilities into your applications, unlocking a world of possibilities for engaging with your users. 💬
 

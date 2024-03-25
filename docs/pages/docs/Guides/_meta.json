@@ -1,4 +1,5 @@
 {
-  "getting-started": "Getting Started",
-  "webhook": "Webhook Setup"
+    "getting-started": "Getting Started",
+    "webhook": "Webhook Setup",
+    "templates": "Using Templates"
 }
