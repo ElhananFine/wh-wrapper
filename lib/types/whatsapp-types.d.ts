@@ -1,5 +1,5 @@
 import { ConversationCategory, HomeWork, LocationType, MediaBase, ReactionType } from "./shared";
-export type MessageType = keyof Types | "unsupported" | "order" | "system" | "request_welcome" | "errors";
+export type MessageType = "text" | "image" | "video" | "sticker" | "document" | "location" | "audio" | "reaction" | "interactive" | "contacts" | "unsupported" | "order" | "system" | "request_welcome" | "errors";
 interface Contact {
     name: {
         formatted_name: string;
@@ -36,23 +36,48 @@ interface Contact {
         title: string;
     }>;
 }
-type Types = {
+type Text = {
+    type: "text";
     text: {
         body: string;
     };
+};
+type Image = {
+    type: "image";
     image: MediaBase;
+};
+type Video = {
+    type: "video";
     video: MediaBase;
+};
+type Sticker = {
+    type: "sticker";
     sticker: MediaBase & {
         animated?: boolean;
     };
+};
+type Document = {
+    type: "document";
     document: MediaBase & {
         filename?: string;
     };
+};
+type Location = {
+    type: "location";
+    location: LocationType;
+};
+type Audio = {
+    type: "audio";
     audio: MediaBase & {
         voice?: boolean;
     };
-    location: LocationType;
+};
+type Reaction = {
+    type: "reaction";
     reaction: ReactionType;
+};
+type Interactive = {
+    type: "interactive";
     interactive: {
         [K in "list_reply" | "button_reply"]: K extends "list_reply" ? {
             id: string;
@@ -65,8 +90,14 @@ type Types = {
     } & {
         type: "list_reply" | "button_reply";
     };
+};
+type Contacts = {
+    type: "contacts";
     contacts: Contact[];
-    errors?: {
+};
+type Unsupported = {
+    type: "unsupported";
+    errors: {
         code: number;
         title: string;
         message: string;
@@ -75,6 +106,7 @@ type Types = {
         };
     }[];
 };
+type MesaageTypes = Text | Image | Video | Sticker | Document | Audio | Location | Reaction | Interactive | Contacts | Unsupported;
 export type MessageValueType<T extends "messages" | "statuses"> = {
     messaging_product: "whatsapp";
     metadata: {
@@ -92,10 +124,7 @@ export type MessageValueType<T extends "messages" | "statuses"> = {
         from: string;
         id: string;
         timestamp: string;
-        type: MessageType;
-    } & {
-        [K in keyof Types]?: Types[K];
-    } & {
+    } & MesaageTypes & {
         context?: Partial<{
             from: string;
             id: string;
@@ -135,5 +164,13 @@ export interface RowWhatsappObject<T extends "messages" | "statuses"> {
             field: "messages";
         }>;
     }>;
+}
+export interface GetAllSubscriptions {
+    whatsapp_business_api_data: {
+        category?: string;
+        link: string;
+        name: string;
+        id: string;
+    };
 }
 export {};

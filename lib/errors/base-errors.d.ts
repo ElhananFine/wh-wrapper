@@ -5,3 +5,6 @@ export declare class WhatsAppError extends Error {
     details?: string;
     constructor(code: number, message: string, fbtrace_id?: string, type?: string, details?: string);
 }
+export declare class LibraryError extends Error {
+    constructor(message: string);
+}

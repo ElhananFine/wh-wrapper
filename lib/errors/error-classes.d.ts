@@ -1,4 +1,5 @@
-import { WhatsAppError } from "./whatsapp-error";
+import { ZodError } from "zod";
+import { LibraryError, WhatsAppError } from "./base-errors";
 export declare class AuthError extends WhatsAppError {
     constructor(code: number, message: string, fbtrace_id?: string, type?: string, details?: string);
     toString(): string;
@@ -34,4 +35,14 @@ export declare class BillingError extends WhatsAppError {
 export declare class UnknownError extends WhatsAppError {
     constructor(code: number, message: string, fbtrace_id?: string, type?: string, details?: string);
     toString(): string;
+}
+export declare class ParametersError extends LibraryError {
+    errors: {
+        errorCode: string;
+        errorParam: string;
+        errorMessage: string;
+        expected?: string;
+        received?: string;
+    }[];
+    constructor(message: string, error: ZodError);
 }

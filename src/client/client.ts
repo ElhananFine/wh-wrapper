@@ -6,1157 +6,1162 @@ import FormData from "form-data";
 import * as z from "zod";
 import Message from "../handlers/message-handler";
 import {
-  getDisplayNameStatus,
-  WhatsAppProfileData,
-  CreateTempleteResponse,
-} from "../interfaces/client-interface";
-import {
-  GetAllSubscriptions,
-  getPhoneNumbers,
-} from "../interfaces/whatsapp-response-interface";
-import {
-  CreateTempleteSchema,
-  Language,
-  SendContacOptionSchema,
-  SendContacSchema,
-  SendTemplateSchema,
-  UpdateBusinessProfileSchema,
-  nameSchema,
-  phoneSchema,
-  sendMediaInteractiveSchema,
-  sendMessageOptionsSchema,
-  sendMessageSchema,
+    CreateTempleteSchema,
+    Language,
+    SendContacOptionSchema,
+    SendContacSchema,
+    SendTemplateSchema,
+    UpdateBusinessProfileSchema,
+    nameSchema,
+    phoneSchema,
+    sendMediaInteractiveSchema,
+    sendMessageOptionsSchema,
+    sendMessageSchema,
 } from "../schemas/schema";
 import Callback from "../handlers/callback-handler";
 import Update from "../handlers/update-handler";
 import RequestWelcome from "../handlers/request-welcome-handler";
 import {
-  AuthError,
-  BillingError,
-  IntegrityError,
-  MessageError,
-  ParameterError,
-  RegistrationError,
-  TemplateError,
-  ThrottlingError,
-  UnknownError,
+    AuthError,
+    BillingError,
+    IntegrityError,
+    MessageError,
+    ParameterError,
+    ParametersError,
+    RegistrationError,
+    TemplateError,
+    ThrottlingError,
+    UnknownError,
 } from "../errors/error-classes";
 import {
-  GetPhoneNumberByID,
-  isSuccessResponse,
-  SendMessageResponse,
+    CreateTempleteResponse,
+    GetPhoneNumberByID,
+    isSuccessResponse,
+    SendMessageResponse,
+    WhatsAppProfileData,
 } from "../types/internal-types";
-import { ClientOptions, GetPhoneDataReturn } from "../types/shared";
+import { ClientOptions } from "../types/shared";
+import { GetAllSubscriptions } from "../types/whatsapp-types";
 
 type MessageHandlers = {
-  messages: (message: Message) => void;
-  statuses: (statuses: Update) => void;
-  callbacks: (callbacks: Callback) => void;
-  ChatOpened: (chat: RequestWelcome) => void;
+    messages: (message: Message) => void;
+    statuses: (statuses: Update) => void;
+    callbacks: (callbacks: Callback) => void;
+    ChatOpened: (chat: RequestWelcome) => void;
 };
 
-/** @constructor */
+/**
+ * @class Client
+ * @extends EventEmitter
+ * @classdesc The main class for interacting with the WhatsApp Cloud API.
+ */
 export default class Client extends EventEmitter {
-  private _untypedOn = this.on;
-  public on = <K extends keyof MessageHandlers>(
-    event: K,
-    listener: MessageHandlers[K]
-  ): this => this._untypedOn(event, listener);
+    private _untypedOn = this.on;
+    public on = <K extends keyof MessageHandlers>(event: K, listener: MessageHandlers[K]): this =>
+        this._untypedOn(event, listener);
 
-  url;
-  axiosInstance;
-  commonKeys = { messaging_product: "whatsapp", recipient_type: "individual" };
-  constructor(
-    private readonly phoneID: string | number,
-    private readonly token: string,
-    private readonly verifyToken?: string,
-    private options: Partial<ClientOptions> = {}
-  ) {
-    super();
-    console.clear();
-
-    if (!this.phoneID || !this.token)
-      throw new Error("Missing Parameters, phoneID and token are required");
-
-    this.url = `${this.options?.baseURL || "https://graph.facebook.com"}/v${
-      this.options?.apiVersion?.toString() || "19.0"
-    }`;
-
-    this.axiosInstance = axios.create({
-      baseURL: this.url,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.token}`,
-      },
-    });
-
-    this.axiosInstance.defaults.headers;
-
-    if (this.verifyToken) this.initialize();
-
-    if (this.options?.callbackUrl) {
-      if (!this.options.appID || !this.options.appSecret)
-        throw new Error("Missing Parameters, appId and appSecret are required");
-      else
-        this._setCallBackUrl(
-          this.options.callbackUrl,
-          this.options.appID.toString(),
-          this.options.appSecret
-        );
-    }
-  }
-
-  private async initialize(): Promise<void> {
-    if (
-      !this.options.server ||
-      !this.options.server.hasOwnProperty("listen") ||
-      typeof this.options.server.listen !== "function"
+    url;
+    axiosInstance;
+    commonKeys = { messaging_product: "whatsapp", recipient_type: "individual" };
+    /**
+     * @constructor
+     * @param {string|number} phoneID - The Phone number ID.
+     * @param {string} token - The token of the WhatsApp business account.
+     * @param {string} [verifyToken] - The verify token of the registered callbackUrl (required when using a webhook).
+     * @param {Partial<ClientOptions>} [options] - Additional configuration options.
+     * @param {string} [options.baseURL] - The base URL of the WhatsApp API.
+     * @param {string|number} [options.apiVersion] - The API version of the WhatsApp Cloud API.
+     * @param {string} [options.webHookEndpoint] - The endpoint to listen for incoming messages.
+     * @param {string} [options.callbackUrl] - The callback URL to register.
+     * @param {number|string} [options.appID] - The ID of the app in the App Basic Settings.
+     * @param {string} [options.appSecret] - The secret of the app in the App Basic Settings.
+     * @param {string} [options.businessAccountID] - The WhatsApp business account ID that owns the phone ID.
+     * @param {Express} [options.server] - The Express app instance to use for the webhook.
+     * @param {number} [options.port] - The port to listen on for the webhook server.
+     */
+    constructor(
+        private readonly phoneID: string | number,
+        private readonly token: string,
+        private readonly verifyToken?: string,
+        private options: Partial<ClientOptions> = {}
     ) {
-      console.warn(
-        "A proper Express instance was not provided, an Express server operator..."
-      );
-      const port = this.options.port || 3000;
-      this.options.server = express();
-      this.options.server.listen(port);
-      this.options.server.use(express.json());
-      console.warn(
-        `Express server listening on http://localhost:${port}, port: ${port}`
-      );
-    }
+        super();
+        console.clear();
 
-    if (!this.verifyToken)
-      throw new Error("A proper verify token must be provided.");
+        if (!this.phoneID || !this.token) throw new Error("Missing Parameters, phoneID and token are required");
 
-    this.options.server.get(
-      this?.options?.webHookEndpoint || "/",
-      (req: Request, res: Response) => {
-        return req.query["hub.verify_token"] === this.verifyToken
-          ? res.status(200).send(req.query["hub.challenge"])
-          : res.status(403).send("Error, invalid verification token");
-      }
-    );
-    this.options.server.post(
-      this.options?.webHookEndpoint || "/",
-      (req: Request, res: Response) => {
-        try {
-          const field = req.body.entry[0].changes[0].field;
-          const value = req.body.entry[0].changes[0].value;
+        this.url = `${this.options?.baseURL || "https://graph.facebook.com"}/v${
+            this.options?.apiVersion?.toString() || "19.0"
+        }`;
 
-          if (value.metadata.phone_number_id !== this.phoneID)
-            return res.status(200).send();
+        this.axiosInstance = axios.create({
+            baseURL: this.url,
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${this.token}`,
+            },
+        });
 
-          if (field === "messages") {
-            if ("messages" in value) {
-              if (value.messages[0].type === "interactive")
-                this.emit("callbacks", new Callback(this, value));
-              else if (
-                [
-                  "text",
-                  "image",
-                  "sticker",
-                  "video",
-                  "document",
-                  "audio",
-                  "location",
-                  "contacts",
-                  "unsupported",
-                ].includes(value.messages[0].type)
-              ) {
-                this.emit("messages", new Message(this, value));
-              } else if (value.messages![0].type === "request_welcome") {
-                this.emit("ChatOpened", new RequestWelcome(this, value));
-              } else return;
-            } else if ("statuses" in value) {
-              this.emit("statuses", new Update(this, value));
-            }
-          }
-          return res.status(200).send();
-        } catch (e) {
-          res.status(500).send();
+        this.axiosInstance.defaults.headers;
+
+        if (this.verifyToken) this.initialize();
+
+        if (this.options?.callbackUrl) {
+            if (!this.options.appID || !this.options.appSecret)
+                throw new Error("Missing Parameters, appId and appSecret are required");
+            else this.setCallBackUrl(this.options.callbackUrl, this.options.appID.toString(), this.options.appSecret);
         }
-      }
-    );
-  }
-
-  private formatZodError(error: any): void {
-    const errorMessages = error.issues.map((issue: any) => {
-      return `(${issue.code}): ${issue.path.join(".")} ${
-        issue.message
-      } expected ${issue.expected} but received ${issue.received}`;
-    });
-    throw new Error(errorMessages);
-  }
-
-  // flows
-  async createFlow() {}
-  async deleteFlow() {}
-  public async sendCatalog() {}
-  // public async sendProduct({
-  //   to,
-  //   catalogId,
-  //   productSections,
-  //   title,
-  //   body,
-  //   footer,
-  //   replyToMessageId,
-  // }: SendProductsParams) {
-  //   const action = {
-  //     catalog_id: catalogId,
-  //     sections: productSections.map((section) => ({
-  //       title: section.title,
-  //       product_items: section.skus.map((sku) => ({ productRetailerId: sku })),
-  //     })),
-  //   };
-
-  //   return await this._sendMessage({
-  //     to,
-  //     type: "interactive",
-  //     interactive: {
-  //       type: "product_list",
-  //       action,
-  //     },
-  //   });
-  // }
-
-  public async createTemplate(
-    template: z.infer<typeof CreateTempleteSchema>
-  ): Promise<CreateTempleteResponse & { templateName: string }> {
-    interface componentsType {
-      type?: "HEADER" | "BODY" | "FOOTER" | "BUTTONS";
-      format?: string;
-      text?: string;
-      add_security_recommendation?: boolean;
-      code_expiration_minutes?: number;
-      buttons?: {
-        type: "PHONE_NUMBER" | "URL" | "QUICK_REPLY" | "COPY_CODE";
-        text?: string;
-        example?: string | string[];
-        phone_number?: string;
-        url?: string;
-      }[];
-      example?: {
-        [key: string]: string[] | string[][];
-      };
     }
 
-    if (!this.options.businessAccountID)
-      throw new Error("You must provide a business account Id before used");
-    const validation = CreateTempleteSchema.safeParse(template);
-    if (!validation.success) this.formatZodError(validation.error);
-
-    const data: Partial<{
-      name: string;
-      category: string;
-      allow_category_change?: boolean;
-      language: string;
-      components: componentsType[];
-    }> = {
-      name: template.name.replace(/ /g, "_"),
-      language: Language[template.language],
-      category: template.category,
-      allow_category_change: true,
-      components: [],
-    };
-
-    // header
-    if (template.header) {
-      const header: Partial<componentsType> = { type: "HEADER" };
-
-      header.format = template.header.type;
-
-      if (
-        template.header.type === "IMAGE" ||
-        template.header.type === "VIDEO" ||
-        template.header.type === "DOCUMENT"
-      ) {
-        header.example = { header_handle: [template.header.media] };
-      } else if (template.header.type === "TEXT" && template.header.text) {
-        const variables = template.header.text.match(/\{\{(.*?)\}\}/g);
-
-        if (variables && variables?.length > 0) {
-          template.header.text = template.header.text
-            .split(variables[0].trim())
-            .join("{{1}}");
+    private async initialize(): Promise<void> {
+        if (
+            !this.options.server ||
+            !this.options.server.hasOwnProperty("listen") ||
+            typeof this.options.server.listen !== "function"
+        ) {
+            console.warn("A proper Express instance was not provided, an Express server operator...");
+            const port = this.options.port || 3000;
+            this.options.server = express();
+            this.options.server.listen(port);
+            this.options.server.use(express.json());
+            console.warn(`Express server listening on http://localhost:${port}, port: ${port}`);
         }
 
-        header.text = template.header.text;
-        header.example = {
-          header_text: variables?.map((v) => v.slice(2, -2)) || [],
-        };
-      }
-      data.components?.push(header);
-    }
+        if (!this.verifyToken) throw new Error("A proper verify token must be provided.");
 
-    // body
-    const body: Partial<componentsType> = { type: "BODY" };
+        this.options.server.get(this?.options?.webHookEndpoint || "/", (req: Request, res: Response) => {
+            return req.query["hub.verify_token"] === this.verifyToken
+                ? res.status(200).send(req.query["hub.challenge"])
+                : res.status(403).send("Error, invalid verification token");
+        });
+        this.options.server.post(this.options?.webHookEndpoint || "/", (req: Request, res: Response) => {
+            try {
+                const field = req.body.entry[0].changes[0].field;
+                const value = req.body.entry[0].changes[0].value;
 
-    if (typeof template.body === "string") {
-      const variables = template.body.match(/\{\{(.*?)\}\}/g);
+                if (value.metadata.phone_number_id !== this.phoneID) return res.status(200).send();
 
-      if (variables && variables.length > 0) {
-        variables.map(
-          (v, i) =>
-            (template.body = (template.body as string)
-              .split(v.trim())
-              .join(`{{${i + 1}}}`))
-        );
-      }
-
-      body.text = template.body;
-      body.example = {
-        body_text: [variables?.map((v) => v.slice(2, -2)) || []],
-      };
-    } else {
-      body.add_security_recommendation =
-        template.body.addSecurityRecommendation;
-      // body.code_expiration_minutes = template.body.codeExpirationMinutes; to footer
-    }
-
-    data.components?.push(body);
-
-    // footer
-    if (template.footer)
-      data.components?.push({
-        type: "FOOTER",
-        text: template.footer,
-      });
-
-    // buttons
-    if (template.buttons) {
-      const buttonsData: any = { type: "BUTTONS", buttons: [] };
-      if (!Array.isArray(template.buttons))
-        template.buttons = [template.buttons];
-
-      if (template.buttons.filter((b) => b?.type === "UrlButton").length > 2)
-        throw new Error("Max 2 URL buttons allowed");
-
-      if (
-        template.buttons.filter((b) => b?.type === "PhoneNumberButton").length >
-        1
-      )
-        throw new Error("Max 1 phone number button allowed");
-
-      template.buttons.map((button) => {
-        switch (button?.type) {
-          case "UrlButton":
-            const variables = button.url.match(/\{\{(.*?)\}\}/g);
-            variables &&
-              variables.map(
-                (v, i) =>
-                  (button.url = button.url.split(v.trim()).join(`{{${i + 1}}}`))
-              );
-            buttonsData.buttons.push({
-              type: "URL",
-              text: button.title,
-              url: button.url,
-              ...(variables && variables.length > 0
-                ? {
-                    example: variables?.map((v) => `${v.slice(2, -2)}`),
-                  }
-                : { example: [button.url] }),
-            });
-            break;
-          case "PhoneNumberButton":
-            buttonsData.buttons.push({
-              type: "PHONE_NUMBER",
-              text: button.title,
-              phone_number: button.phoneNumber,
-            });
-            break;
-          case "QuickReplyButton":
-            buttonsData.buttons.push({
-              type: "QUICK_REPLY",
-              text: button.text,
-            });
-            break;
-          case "OTPButton":
-            const otp: any = {
-              type: "OTP",
-              otp_type: button.OTPType,
-            };
-            if (button.packageName) otp.package_name = button.packageName;
-            if (button.signatureHash) otp.signature_hash = button.signatureHash;
-            buttonsData.buttons.push(otp);
-            break;
-          case "CopyCodeButton":
-            buttonsData.buttons.push({
-              type: "QUICK_REPLY",
-              example: button.example,
-            });
-            break;
-          default:
-            break;
-        }
-      });
-
-      buttonsData.buttons!.sort((a: { type: string }, b: any) => {
-        const typeOrder: { [key: string]: number } = {
-          QUICK_REPLY: 1,
-          URL: 2,
-          PHONE_NUMBER: 3,
-          COPY_CODE: 4,
-        };
-        return typeOrder[a.type] - typeOrder[b.type];
-      });
-
-      data.components?.push(buttonsData as componentsType);
-    }
-    const response = await this.makeRequest<{
-      id: string;
-      status: string;
-      category: string;
-    }>({
-      method: "POST",
-      url: `/${this.options.businessAccountID}/message_templates`,
-      data,
-    });
-
-    return {
-      ...response,
-      templateName: template.name.replace(/ /g, "_"),
-    } as CreateTempleteResponse & { templateName: string };
-  }
-  public async sendMessage(
-    to: string,
-    text: string,
-    options?: z.infer<typeof sendMessageOptionsSchema>
-  ): Promise<string> {
-    const validation = sendMessageSchema.safeParse({ to, text, options });
-
-    if (!validation.success) {
-      this.formatZodError(validation.error);
-    }
-
-    const data: Partial<{
-      to: string;
-      type: "interactive" | "text";
-      context: { message_id: string };
-      interactive: Partial<{
-        type: "list" | "button";
-        header: { type: string; text: string };
-        body: {};
-        footer: { text: string };
-        action: {};
-      }>;
-    }> = {
-      to,
-    };
-
-    if (options?.messageID) data.context = { message_id: options.messageID };
-
-    if (!options?.buttons && !options?.header && !options?.footer) {
-      return (
-        (await this._sendMessage({
-          ...data,
-          type: "text",
-          text: { body: text, preview_url: options?.previewUrl },
-        })) as SendMessageResponse
-      ).messages[0].id;
-    } else return await this.sendInteractiveMessage(to, text, options);
-  }
-  private async sendInteractiveMessage(
-    to: string,
-    text: string,
-    data: z.infer<typeof sendMessageOptionsSchema>,
-    header?: { type: string; content: object }
-  ) {
-    let buttonArray;
-    let buttonObject: any = {
-      buttons: [],
-    };
-    let buttonTypes: string = "";
-    if (data.buttons && !Array.isArray(data.buttons))
-      buttonArray = [data.buttons];
-    else buttonArray = data.buttons;
-
-    buttonArray?.map((button) => {
-      if ("sections" in button) {
-        buttonTypes = "list";
-        buttonObject = {
-          button: button.buttonTitle,
-          sections: button.sections.map((section) => ({
-            title: section.title,
-            rows: section.rows.map((row) => ({
-              title: row.title,
-              id: row.callbackData,
-              description: row.description,
-            })),
-          })),
-        };
-      } else if ("url" in button) {
-        buttonTypes = "cta_url";
-        buttonObject = {
-          name: "cta_url",
-          parameters: { display_text: button.title, url: button.url },
-        };
-      } else if ("callbackData" in button) {
-        buttonTypes = "button";
-        buttonObject = {
-          buttons: [
-            ...buttonObject.buttons,
-            {
-              type: "reply",
-              reply: { title: button.title, id: button.callbackData },
-            },
-          ],
-        };
-      } else if ("catalog_id" in button) {
-      } else throw new Error("");
-    });
-    return (
-      (await this._sendMessage({
-        to,
-        ...(data.messageID && {
-          context: { message_id: data.messageID },
-        }),
-        type: "interactive",
-        interactive: {
-          type: buttonTypes,
-          body: { text },
-          ...(data.header && {
-            header: {
-              type: "text",
-              text: data.header,
-            },
-          }),
-          ...(header?.content && {
-            header: {
-              type: header?.type,
-              ...header.content,
-            },
-          }),
-          ...(data.footer && {
-            footer: {
-              text: data.footer,
-            },
-          }),
-          action: buttonObject,
-        },
-      })) as SendMessageResponse
-    ).messages[0].id;
-  }
-
-  public async sendTemplate(
-    to: string,
-    template: z.infer<typeof SendTemplateSchema>,
-    options?: { messageID: string }
-  ) {
-    const validation = SendTemplateSchema.safeParse(template);
-    if (!validation.success) this.formatZodError(validation.error);
-
-    if (!Array.isArray(template.body)) template.body = [template.body];
-    if (!Array.isArray(template?.buttons))
-      template.buttons = [template.buttons];
-
-    return await this._sendMessage({
-      to,
-      type: "template",
-      ...(options?.messageID && {
-        context: { message_id: options?.messageID },
-      }),
-      template: {
-        name: template.name,
-        language: {
-          code: Language[template.language],
-        },
-        components: [
-          template?.header && {
-            type: "header",
-            parameters: [
-              {
-                ...(typeof template.header === "string"
-                  ? {
-                      type: "text",
-                      value: template.header,
+                if (field === "messages") {
+                    if ("messages" in value) {
+                        if (value.messages[0].type === "interactive") this.emit("callbacks", new Callback(this, value));
+                        else if (
+                            [
+                                "text",
+                                "image",
+                                "sticker",
+                                "video",
+                                "document",
+                                "audio",
+                                "location",
+                                "contacts",
+                                "unsupported",
+                            ].includes(value.messages[0].type)
+                        ) {
+                            this.emit("messages", new Message(this, value));
+                        } else if (value.messages![0].type === "request_welcome") {
+                            this.emit("ChatOpened", new RequestWelcome(this, value));
+                        } else return;
+                    } else if ("statuses" in value) {
+                        this.emit("statuses", new Update(this, value));
                     }
-                  : {
-                      parameters: [
-                        {
-                          type: template.header.type.toLowerCase(),
-                          [template.header.type.toLowerCase()]: {
-                            ...(template.header.type === "LOCATION" && {
-                              ...((obj: { [key: string]: string }) => {
-                                delete obj["type"];
-                                return obj;
-                              })(template.header),
-                            }),
-                            ...(template.header.type !== "LOCATION" && {
-                              ...(template.header.media.startsWith("http") && {
-                                link: template.header.media,
-                              }),
-                              ...(isNaN(Number(template.header.media)) &&
-                                !template.header.media.startsWith("http") && {
-                                  id: await this.uploadMedia(
-                                    template.header.media
-                                  ),
-                                }),
-                              ...(Number(template.header.media) && {
-                                id: template.header.media,
-                              }),
-                            }),
-                          },
-                        },
-                      ],
-                    }),
-              },
-            ],
-          },
-          {
-            type: "body",
-            parameters: template.body.map((c) =>
-              typeof c === "string"
-                ? { type: "text", text: c }
-                : "currency" in c
-                ? {
-                    type: "currency",
-                    currency: {
-                      fallback_value: c.currency,
-                      code: c.code,
-                      amount_1000: c.amount,
-                    },
-                  }
-                : "dateTime" in c && {
-                    type: "date_time",
-                    date_time: { fallback_value: c.dateTime },
-                  }
-            ),
-          },
-          template?.buttons &&
-            template?.buttons.map((p, i) => {
-              let d: any = { type: "button" };
-              switch (p?.type) {
-                case "QuickReplyButton":
-                  d = {
-                    ...d,
-                    sub_type: "quick_reply",
-                    index: i,
-                    parameters: [{ type: "payload", payload: p.text }],
-                  };
-                  break;
-
-                case "UrlButton":
-                  d = {
-                    ...d,
-                    sub_type: "url",
-                    index: i,
-                    text: p.title,
-                    url: p.url,
-                  };
-
-                default:
-                  break;
-              }
-            }),
-        ],
-      },
-    });
-  }
-
-  // public async updateCommerceSettings(settings: CommerceSettings) {
-  //   if (!settings.isCartEnabled && !settings.isCatalogVisible) {
-  //     throw new Error("At least one setting must be provided");
-  //   }
-  //   const data = {
-  //     is_cart_enabled: settings.isCartEnabled,
-  //     is_catalog_visible: settings.isCatalogVisible,
-  //   };
-
-  //   // add type UpdateCommerceSettingsResponse to makeRequest funtion
-
-  //   return await this.makeRequest({
-  //     method: "POST",
-  //     url: `/${this.phoneID}/whatsapp_commerce_settings`,
-  //     params: data,
-  //   });
-  // }
-
-  // public async getCommerceSettings() {
-  //   return await this.makeRequest<{
-  //     data: CommerceSettings & { catalog_id: string }[];
-  //   }>({
-  //     method: "GET",
-  //     url: `/${this.phoneID}/whatsapp_commerce_settings`,
-  //   });
-  // }
-
-  // נבדק
-  // הוספת טיפול מותאם אישית בשגיאות
-  async makeRequest<T>(config: {
-    method: string;
-    url: string;
-    data?: object;
-    headers?: object;
-    params?: object;
-    responseType?: ResponseType;
-  }): Promise<T> {
-    try {
-      const response: AxiosResponse = await this.axiosInstance({
-        ...config,
-      });
-      return response.data;
-    } catch (e: any) {
-      if (isAxiosError(e)) {
-        const response = e.response!;
-        const code = response.data.error.code;
-        const message = response.data.error.message;
-        const fbtrace_id = response.data.error?.fbtrace_id;
-        const type = response.data.error.type;
-        const details = response.data.error.error_data?.details;
-
-        switch (true) {
-          case [0, 3, 10, 190, 200].includes(code):
-            throw new AuthError(code, message, fbtrace_id, type, details);
-          case [4, 80007, 130429, 131048, 131056, 133016].includes(code):
-            throw new ThrottlingError(code, message, fbtrace_id, type, details);
-          case [368, 131031].includes(code):
-            throw new IntegrityError(code, message, fbtrace_id, type, details);
-          case [100, 131008, 131009].includes(code):
-            throw new ParameterError(code, message, fbtrace_id, type, details);
-          case [131021, 131026, 131047, 131051, 131052, 131053].includes(code):
-            throw new MessageError(code, message, fbtrace_id, type, details);
-          case [
-            132000, 132001, 132005, 132007, 132012, 132015, 132016, 132068,
-            132069,
-          ].includes(code):
-            throw new TemplateError(code, message, fbtrace_id, type, details);
-          case [
-            133000, 133004, 133005, 133006, 133008, 133009, 133010, 133015,
-          ].includes(code):
-            throw new RegistrationError(
-              code,
-              message,
-              fbtrace_id,
-              type,
-              details
-            );
-          case [131042].includes(code):
-            throw new BillingError(code, message, fbtrace_id, type, details);
-          default:
-            throw new UnknownError(code, message, fbtrace_id, type, details);
-        }
-      } else {
-        throw new Error("unknown error");
-      }
+                }
+                return res.status(200).send();
+            } catch (e) {
+                res.status(500).send();
+            }
+        });
     }
-  }
-  private async _sendMessage(content: object) {
-    return await this.makeRequest<SendMessageResponse | isSuccessResponse>({
-      method: "POST",
-      url: `/${this.phoneID}/messages`,
-      data: {
-        ...this.commonKeys,
-        ...content,
-      },
-    });
-  }
-  public async getPhoneNumbers(): Promise<getPhoneNumbers> {
-    if (!this.options?.businessAccountID)
-      throw new Error("You must provide a business account to getPhoneNumbers");
-
-    return await this.makeRequest<getPhoneNumbers>({
-      method: "GET",
-      url: `/${this.options?.businessAccountID}/phone_numbers/`,
-    });
-  }
-  public async getPhoneData(): Promise<GetPhoneDataReturn> {
-    const r = await this.makeRequest<GetPhoneNumberByID>({
-      method: "GET",
-      url: `/${this.phoneID}/`,
-    });
-    return {
-      verifiedName: r.verified_name,
-      phoneNumber: r.display_phone_number,
-      qualityRating: r.quality_rating,
-      platformType: r.quality_rating,
-      phoneNumberID: r.id,
-    };
-  }
-
-  public async getNameStatus(): Promise<getDisplayNameStatus> {
-    return await this.makeRequest<getDisplayNameStatus>({
-      method: "GET",
-      url: `/${this.phoneID}/`,
-      params: { fields: "name_status" },
-    });
-  }
-  public async getAllSubscriptions(): Promise<GetAllSubscriptions[]> {
-    if (!this.options?.businessAccountID)
-      throw new Error(
-        "You must provide a business account to getAllSubscriptions"
-      );
-
-    return (
-      await this.makeRequest<{ data: GetAllSubscriptions[] }>({
-        method: "GET",
-        url: `/${this.options?.businessAccountID}/subscribed_apps/`,
-      })
-    ).data;
-  }
-  public async deleteMedia(mediaID: string | number): Promise<boolean> {
-    return (
-      await this.makeRequest<isSuccessResponse>({
-        method: "DELETE",
-        url: `/${mediaID.toString()}`,
-        params: { phone_number_id: this.phoneID },
-      })
-    ).success;
-  }
-  public async markMessageAsRead(messageID: string): Promise<boolean> {
-    const data = {
-      messaging_product: "whatsapp",
-      status: "read",
-      message_id: messageID,
-    };
-    return ((await this._sendMessage(data)) as isSuccessResponse).success;
-  }
-  public async sendReaction(
-    to: string,
-    emoji: string,
-    messageID: string
-  ): Promise<string> {
-    const data = {
-      to,
-      type: "reaction",
-      reaction: {
-        message_id: messageID,
-        emoji,
-      },
-    };
-
-    return ((await this._sendMessage(data)) as SendMessageResponse).messages[0]
-      .id;
-  }
-  public async removeReaction(to: string, messageID: string): Promise<string> {
-    return await this.sendReaction(to, messageID, "");
-  }
-  public async sendLocation(
-    to: string,
-    location: { latitude: number | string; longitude: number | string },
-    options?: { name?: string; address?: string; messageID?: string }
-  ): Promise<string> {
-    if (!location.latitude || !location.longitude)
-      throw new Error("location is must");
-    const data = {
-      to,
-      ...(options?.messageID && { context: { message_id: options.messageID } }),
-      type: "location",
-      location: {
-        ...location,
-        ...options,
-      },
-    };
-    return ((await this._sendMessage(data)) as SendMessageResponse).messages[0]
-      .id;
-  }
-  async getBusinessProfile(): Promise<
-    Omit<WhatsAppProfileData, "messaging_product">
-  > {
-    const fields = [
-      "about",
-      "address",
-      "description",
-      "email",
-      "profile_picture_url",
-      "websites",
-      "vertical",
-    ];
-
-    return (
-      await this.makeRequest<{ data: WhatsAppProfileData[] }>({
-        method: "GET",
-        url: `/${this.phoneID}/whatsapp_business_profile?fields=${fields.join(
-          ","
-        )}`,
-      })
-    ).data.map((p) => {
-      delete p.messaging_product;
-      return p;
-    })[0];
-  }
-  async registerPhoneNumber(
-    pin: string,
-    dataLocalizationRegion?:
-      | "AU"
-      | "ID"
-      | "IN"
-      | "JP"
-      | "SG"
-      | "KR"
-      | "DE"
-      | "CH"
-      | "GB"
-      | "BR"
-      | "BH"
-      | "ZA"
-      | "CA"
-  ): Promise<{ success: boolean }> {
-    return await this.makeRequest<{ success: boolean }>({
-      url: `/${this.phoneID}/register`,
-      method: "POST",
-      data: {
-        ...this.commonKeys,
-        pin,
-        ...(dataLocalizationRegion ? { dataLocalizationRegion } : {}),
-      },
-    });
-  }
-  async setBusinessPublicKey(publicKey: string): Promise<boolean> {
-    return (
-      await this.makeRequest<{ success: boolean }>({
-        url: `/${this.phoneID}/whatsapp_business_encryption`,
-        method: "POST",
-        data: { business_public_key: publicKey },
-      })
-    ).success;
-  }
-
-  async uploadMedia(media: string): Promise<string> {
-    const data = new FormData();
-    data.append("messaging_product", "whatsapp");
-
-    if (media.startsWith("http")) {
-      const response = await axios.get(media, { responseType: "arraybuffer" });
-      const mimeType = response.headers["content-type"];
-      data.append("file", response.data, {
-        contentType: mimeType,
-        filename: media.split("/").pop(),
-      });
-      data.append("type", mimeType);
-    } else {
-      if (!fs.existsSync(media)) throw new Error("חובה לספק נתיב קובץ תקין");
-      data.append("file", fs.createReadStream(media));
-    }
-
-    return (
-      await this.makeRequest<{ id: string }>({
-        method: "POST",
-        url: `/${this.phoneID}/media`,
-        data,
-        headers: {
-          ...data.getHeaders(),
-        },
-      })
-    ).id;
-  }
-
-  async sendSticker(
-    to: string,
-    sticker: string,
-    options?: { messageID: string }
-  ): Promise<string> {
-    return await this.sendMedia("STICKER", to, sticker, options);
-  }
-  async sendVideo(
-    to: string,
-    video: string,
-    options?: Omit<z.infer<typeof sendMediaInteractiveSchema>, "filename">
-  ): Promise<string> {
-    return await this.sendMedia("VIDEO", to, video, options);
-  }
-  async sendDocument(
-    to: string,
-    document: string,
-    options?: z.infer<typeof sendMediaInteractiveSchema>
-  ): Promise<string> {
-    return await this.sendMedia("DOCUMENT", to, document, options);
-  }
-
-  async sendAudio(
-    to: string,
-    audio: string,
-    options?: { messageID: string }
-  ): Promise<string> {
-    return await this.sendMedia("AUDIO", to, audio, options);
-  }
-  private async sendMedia(
-    type: "IMAGE" | "VIDEO" | "DOCUMENT" | "STICKER" | "AUDIO",
-    to: string,
-    media: string,
-    options?: z.infer<typeof sendMediaInteractiveSchema>
-  ): Promise<string> {
-    const validation = await sendMediaInteractiveSchema.safeParse(options);
-    if (!validation.success) this.formatZodError(validation.error);
-
-    if (!options?.buttons) {
-      return (
-        (await this._sendMessage({
-          to,
-          type: type.toLowerCase(),
-          ...(options?.messageID && {
-            context: { message_id: options.messageID },
-          }),
-          [type.toLowerCase()]: {
-            ...(options?.capiton && { caption: options.capiton }),
-            ...(media.startsWith("http") && { link: media }),
-            ...(isNaN(Number(media)) &&
-              !media.startsWith("http") && {
-                id: await this.uploadMedia(media),
-              }),
-            ...(Number(media) && { id: media }),
-            ...(type === "DOCUMENT" &&
-              options?.filename && { filename: options?.filename }),
-          },
-        })) as SendMessageResponse
-      ).messages[0].id;
-    } else {
-      if (!options.capiton) throw new Error("לא ניתן לספק כפתורים ללא תיאור");
-      return await this.sendInteractiveMessage(
-        to,
-        options.capiton,
-        {
-          ...(options.messageID && { messageId: options.messageID }),
-          ...(options.footer && { footer: options.footer }),
-          buttons: options.buttons,
-        },
-        {
-          type: type.toLowerCase(),
-          content: {
-            [type.toLowerCase()]: {
-              ...(media.startsWith("http") && { link: media }),
-              ...(isNaN(Number(media)) &&
-                !media.startsWith("http") && {
-                  id: await this.uploadMedia(media),
-                }),
-              ...(Number(media) && { id: media }),
-              ...(type === "DOCUMENT" &&
-                options?.filename && { filename: options?.filename }),
+    private async setCallBackUrl(callbackUrl: string, appID: string, appSecret: string): Promise<{ success: boolean }> {
+        const getAppAcsessToken = await this.makeRequest<{
+            access_token: string;
+            token_type: "bearer";
+        }>({
+            method: "GET",
+            url: `/oauth/access_token`,
+            params: {
+                grant_type: "client_credentials",
+                client_id: appID,
+                client_secret: appSecret,
             },
-          },
+        });
+
+        return await this.makeRequest<{ success: boolean }>({
+            method: "POST",
+            url: `/${appID}/subscriptions`,
+            params: {
+                object: "whatsapp_business_account",
+                callback_url: callbackUrl + "/" + this.options.webHookEndpoint || "",
+                verify_token: this.verifyToken,
+                access_token: getAppAcsessToken.access_token,
+                fields: ["message_template_status_update", "messages"].join(","),
+            },
+        });
+    }
+    private async makeRequest<T>(config: {
+        method: string;
+        url: string;
+        data?: object;
+        headers?: object;
+        params?: object;
+        responseType?: ResponseType;
+    }): Promise<T> {
+        try {
+            const response: AxiosResponse = await this.axiosInstance({
+                ...config,
+            });
+            return response.data;
+        } catch (e: any) {
+            if (isAxiosError(e)) {
+                const response = e.response!;
+                const code = response.data.error.code;
+                const message = response.data.error.message;
+                const fbtrace_id = response.data.error?.fbtrace_id;
+                const type = response.data.error.type;
+                const details = response.data.error.error_data?.details;
+
+                switch (true) {
+                    case [0, 3, 10, 190, 200].includes(code):
+                        throw new AuthError(code, message, fbtrace_id, type, details);
+                    case [4, 80007, 130429, 131048, 131056, 133016].includes(code):
+                        throw new ThrottlingError(code, message, fbtrace_id, type, details);
+                    case [368, 131031].includes(code):
+                        throw new IntegrityError(code, message, fbtrace_id, type, details);
+                    case [100, 131008, 131009].includes(code):
+                        throw new ParameterError(code, message, fbtrace_id, type, details);
+                    case [131021, 131026, 131047, 131051, 131052, 131053].includes(code):
+                        throw new MessageError(code, message, fbtrace_id, type, details);
+                    case [132000, 132001, 132005, 132007, 132012, 132015, 132016, 132068, 132069].includes(code):
+                        throw new TemplateError(code, message, fbtrace_id, type, details);
+                    case [133000, 133004, 133005, 133006, 133008, 133009, 133010, 133015].includes(code):
+                        throw new RegistrationError(code, message, fbtrace_id, type, details);
+                    case [131042].includes(code):
+                        throw new BillingError(code, message, fbtrace_id, type, details);
+                    default:
+                        throw new UnknownError(code, message, fbtrace_id, type, details);
+                }
+            } else {
+                throw new Error("unknown error");
+            }
         }
-      );
-    }
-  }
-
-  async sendImage(
-    to: string,
-    image: string,
-    options?: Omit<z.infer<typeof sendMediaInteractiveSchema>, "filename">
-  ) {
-    return await this.sendMedia("IMAGE", to, image, options);
-  }
-
-  public async sendContact(
-    to: string,
-    name: z.infer<typeof nameSchema>,
-    phone: z.infer<typeof phoneSchema>,
-    options?: z.infer<typeof SendContacOptionSchema>
-  ): Promise<string> {
-    const validation = await SendContacSchema.safeParse({
-      to,
-      name,
-      phones: phone,
-      options,
-    });
-
-    if (!validation.success) this.formatZodError(validation.error);
-
-    return (
-      (await this._sendMessage({
-        to,
-        ...(options?.messageID && {
-          context: { message_id: options.messageID },
-        }),
-        type: "contacts",
-        contacts: [
-          {
-            name:
-              typeof name === "string"
-                ? { first_name: name, formatted_name: name }
-                : name,
-            phones:
-              typeof phone === "string"
-                ? { phone: "+" + phone }
-                : !Array.isArray(phone)
-                ? [phone]
-                : phone,
-            ...(options?.birthday && { birthday: options.birthday }),
-            ...(options?.Org && { org: options.Org }),
-            ...(options?.emails && {
-              emails: !Array.isArray(options.emails)
-                ? [options.emails]
-                : options.emails,
-            }),
-            ...(options?.addresses && {
-              addresses: !Array.isArray(options.addresses)
-                ? [options.addresses]
-                : options.addresses,
-            }),
-            ...(options?.urls && {
-              urls: !Array.isArray(options.urls)
-                ? [options.urls]
-                : options.urls,
-            }),
-          },
-        ],
-      })) as SendMessageResponse
-    ).messages[0].id;
-  }
-
-  public async sendRowRequest<T>(obj: {
-    method: "GET" | "POST" | "PUT" | "DELETE";
-    endpoint: string;
-    data?: object;
-    headers?: object;
-  }) {
-    return await this.makeRequest<T>({ ...obj, url: obj.endpoint });
-  }
-
-  private async _setCallBackUrl(
-    callbackUrl: string,
-    appID: string,
-    appSecret: string
-  ): Promise<{ success: boolean }> {
-    const getAppAcsessToken = await this.makeRequest<{
-      access_token: string;
-      token_type: "bearer";
-    }>({
-      method: "GET",
-      url: `/oauth/access_token`,
-      params: {
-        grant_type: "client_credentials",
-        client_id: appID,
-        client_secret: appSecret,
-      },
-    });
-
-    return await this.makeRequest<{ success: boolean }>({
-      method: "POST",
-      url: `/${appID}/subscriptions`,
-      params: {
-        object: "whatsapp_business_account",
-        callback_url: callbackUrl + "/" + this.options.webHookEndpoint || "",
-        verify_token: this.verifyToken,
-        access_token: getAppAcsessToken.access_token,
-        fields: ["message_template_status_update", "messages"].join(","),
-      },
-    });
-  }
-
-  async updateBusinessProfile(
-    info: z.infer<typeof UpdateBusinessProfileSchema>
-  ): Promise<isSuccessResponse> {
-    const validation = UpdateBusinessProfileSchema.safeParse(info);
-
-    if (!validation.success) {
-      this.formatZodError(validation.error);
     }
 
-    const data = Object.fromEntries(
-      Object.entries({
-        about: info.about,
-        address: info.address,
-        description: info.description,
-        email: info.email,
-        profile_picture_handle: info.profilePictureHandle,
-        vertical: info.industry.toString().toLowerCase(),
-        websites: info.websites,
-      }).filter(([_, v]) => v != null && v !== "")
-    );
+    // async createFlow() {}
+    // async deleteFlow() {}
+    // public async sendCatalog() {}
+    // public async sendProduct() {}
 
-    return (await this.makeRequest<isSuccessResponse>({
-      url: `/${this.phoneID}/whatsapp_business_profile`,
-      method: "POST",
-      data,
-    })) as isSuccessResponse;
-  }
+    // templates
+    public async createTemplate(
+        template: z.infer<typeof CreateTempleteSchema>
+    ): Promise<CreateTempleteResponse & { templateName: string }> {
+        interface componentsType {
+            type?: "HEADER" | "BODY" | "FOOTER" | "BUTTONS";
+            format?: string;
+            text?: string;
+            add_security_recommendation?: boolean;
+            code_expiration_minutes?: number;
+            buttons?: {
+                type: "PHONE_NUMBER" | "URL" | "QUICK_REPLY" | "COPY_CODE";
+                text?: string;
+                example?: string | string[];
+                phone_number?: string;
+                url?: string;
+            }[];
+            example?: {
+                [key: string]: string[] | string[][];
+            };
+        }
+
+        if (!this.options.businessAccountID) throw new Error("You must provide a business account Id before used");
+        const validation = CreateTempleteSchema.safeParse(template);
+
+        if (!validation.success) {
+            throw new ParametersError("Error in the parameters you provided", validation.error);
+        }
+        const data: Partial<{
+            name: string;
+            category: string;
+            allow_category_change?: boolean;
+            language: string;
+            components: componentsType[];
+        }> = {
+            name: template.name.replace(/ /g, "_"),
+            language: Language[template.language],
+            category: template.category,
+            allow_category_change: true,
+            components: [],
+        };
+
+        // header
+        if (template.header) {
+            const header: Partial<componentsType> = { type: "HEADER" };
+
+            header.format = template.header.type;
+
+            if (
+                template.header.type === "IMAGE" ||
+                template.header.type === "VIDEO" ||
+                template.header.type === "DOCUMENT"
+            ) {
+                header.example = { header_handle: [template.header.media] };
+            } else if (template.header.type === "TEXT" && template.header.text) {
+                const variables = template.header.text.match(/\{\{(.*?)\}\}/g);
+
+                if (variables && variables?.length > 0) {
+                    template.header.text = template.header.text.split(variables[0].trim()).join("{{1}}");
+                }
+
+                header.text = template.header.text;
+                header.example = {
+                    header_text: variables?.map((v) => v.slice(2, -2)) || [],
+                };
+            }
+            data.components?.push(header);
+        }
+
+        // body
+        const body: Partial<componentsType> = { type: "BODY" };
+
+        if (typeof template.body === "string") {
+            const variables = template.body.match(/\{\{(.*?)\}\}/g);
+
+            if (variables && variables.length > 0) {
+                variables.map((v, i) => (template.body = (template.body as string).split(v.trim()).join(`{{${i + 1}}}`)));
+            }
+
+            body.text = template.body;
+            body.example = {
+                body_text: [variables?.map((v) => v.slice(2, -2)) || []],
+            };
+        } else {
+            body.add_security_recommendation = template.body.addSecurityRecommendation;
+            // body.code_expiration_minutes = template.body.codeExpirationMinutes; to footer
+        }
+
+        data.components?.push(body);
+
+        // footer
+        if (template.footer)
+            data.components?.push({
+                type: "FOOTER",
+                text: template.footer,
+            });
+
+        // buttons
+        if (template.buttons) {
+            const buttonsData: any = { type: "BUTTONS", buttons: [] };
+            if (!Array.isArray(template.buttons)) template.buttons = [template.buttons];
+
+            if (template.buttons.filter((b) => b?.type === "UrlButton").length > 2)
+                throw new Error("Max 2 URL buttons allowed");
+
+            if (template.buttons.filter((b) => b?.type === "PhoneNumberButton").length > 1)
+                throw new Error("Max 1 phone number button allowed");
+
+            template.buttons.map((button) => {
+                switch (button?.type) {
+                    case "UrlButton":
+                        const variables = button.url.match(/\{\{(.*?)\}\}/g);
+                        variables && variables.map((v, i) => (button.url = button.url.split(v.trim()).join(`{{${i + 1}}}`)));
+                        buttonsData.buttons.push({
+                            type: "URL",
+                            text: button.title,
+                            url: button.url,
+                            ...(variables && variables.length > 0
+                                ? {
+                                      example: variables?.map((v) => `${v.slice(2, -2)}`),
+                                  }
+                                : { example: [button.url] }),
+                        });
+                        break;
+                    case "PhoneNumberButton":
+                        buttonsData.buttons.push({
+                            type: "PHONE_NUMBER",
+                            text: button.title,
+                            phone_number: button.phoneNumber,
+                        });
+                        break;
+                    case "QuickReplyButton":
+                        buttonsData.buttons.push({
+                            type: "QUICK_REPLY",
+                            text: button.text,
+                        });
+                        break;
+                    case "OTPButton":
+                        const otp: any = {
+                            type: "OTP",
+                            otp_type: button.OTPType,
+                        };
+                        if (button.packageName) otp.package_name = button.packageName;
+                        if (button.signatureHash) otp.signature_hash = button.signatureHash;
+                        buttonsData.buttons.push(otp);
+                        break;
+                    case "CopyCodeButton":
+                        buttonsData.buttons.push({
+                            type: "QUICK_REPLY",
+                            example: button.example,
+                        });
+                        break;
+                    default:
+                        break;
+                }
+            });
+
+            buttonsData.buttons!.sort((a: { type: string }, b: any) => {
+                const typeOrder: { [key: string]: number } = {
+                    QUICK_REPLY: 1,
+                    URL: 2,
+                    PHONE_NUMBER: 3,
+                    COPY_CODE: 4,
+                };
+                return typeOrder[a.type] - typeOrder[b.type];
+            });
+
+            data.components?.push(buttonsData as componentsType);
+        }
+        const response = await this.makeRequest<{
+            id: string;
+            status: string;
+            category: string;
+        }>({
+            method: "POST",
+            url: `/${this.options.businessAccountID}/message_templates`,
+            data,
+        });
+
+        return {
+            ...response,
+            templateName: template.name.replace(/ /g, "_"),
+        } as CreateTempleteResponse & { templateName: string };
+    }
+    public async sendTemplate(to: string, template: z.infer<typeof SendTemplateSchema>, options?: { messageID: string }) {
+        const validation = SendTemplateSchema.safeParse(template);
+
+        if (!validation.success) {
+            throw new ParametersError("Error in the parameters you provided", validation.error);
+        }
+        if (!Array.isArray(template.body)) template.body = [template.body];
+        if (!Array.isArray(template?.buttons)) template.buttons = [template.buttons];
+
+        return await this._sendMessage({
+            to,
+            type: "template",
+            ...(options?.messageID && {
+                context: { message_id: options?.messageID },
+            }),
+            template: {
+                name: template.name,
+                language: {
+                    code: Language[template.language],
+                },
+                components: [
+                    template?.header && {
+                        type: "header",
+                        parameters: [
+                            {
+                                ...(typeof template.header === "string"
+                                    ? {
+                                          type: "text",
+                                          value: template.header,
+                                      }
+                                    : {
+                                          parameters: [
+                                              {
+                                                  type: template.header.type.toLowerCase(),
+                                                  [template.header.type.toLowerCase()]: {
+                                                      ...(template.header.type === "LOCATION" && {
+                                                          ...((obj: { [key: string]: string }) => {
+                                                              delete obj["type"];
+                                                              return obj;
+                                                          })(template.header),
+                                                      }),
+                                                      ...(template.header.type !== "LOCATION" && {
+                                                          ...(template.header.media.startsWith("http") && {
+                                                              link: template.header.media,
+                                                          }),
+                                                          ...(isNaN(Number(template.header.media)) &&
+                                                              !template.header.media.startsWith("http") && {
+                                                                  id: await this.uploadMedia(template.header.media),
+                                                              }),
+                                                          ...(Number(template.header.media) && {
+                                                              id: template.header.media,
+                                                          }),
+                                                      }),
+                                                  },
+                                              },
+                                          ],
+                                      }),
+                            },
+                        ],
+                    },
+                    {
+                        type: "body",
+                        parameters: template.body.map((c) =>
+                            typeof c === "string"
+                                ? { type: "text", text: c }
+                                : "currency" in c
+                                ? {
+                                      type: "currency",
+                                      currency: {
+                                          fallback_value: c.currency,
+                                          code: c.code,
+                                          amount_1000: c.amount,
+                                      },
+                                  }
+                                : "dateTime" in c && {
+                                      type: "date_time",
+                                      date_time: { fallback_value: c.dateTime },
+                                  }
+                        ),
+                    },
+                    template?.buttons &&
+                        template?.buttons.map((p, i) => {
+                            let d: any = { type: "button" };
+                            switch (p?.type) {
+                                case "QuickReplyButton":
+                                    d = {
+                                        ...d,
+                                        sub_type: "quick_reply",
+                                        index: i,
+                                        parameters: [{ type: "payload", payload: p.text }],
+                                    };
+                                    break;
+
+                                case "UrlButton":
+                                    d = {
+                                        ...d,
+                                        sub_type: "url",
+                                        index: i,
+                                        text: p.title,
+                                        url: p.url,
+                                    };
+
+                                default:
+                                    break;
+                            }
+                        }),
+                ],
+            },
+        });
+    }
+
+    // messages
+    private async _sendMessage(content: object) {
+        return await this.makeRequest<SendMessageResponse | isSuccessResponse>({
+            method: "POST",
+            url: `/${this.phoneID}/messages`,
+            data: {
+                ...this.commonKeys,
+                ...content,
+            },
+        });
+    }
+    private async sendInteractiveMessage(
+        to: string,
+        text: string,
+        data: z.infer<typeof sendMessageOptionsSchema>,
+        header?: { type: string; content: object }
+    ) {
+        let buttonArray;
+        let buttonObject: any = {
+            buttons: [],
+        };
+        let buttonTypes: string = "";
+        if (data.buttons && !Array.isArray(data.buttons)) buttonArray = [data.buttons];
+        else buttonArray = data.buttons;
+
+        buttonArray?.map((button) => {
+            if ("sections" in button) {
+                buttonTypes = "list";
+                buttonObject = {
+                    button: button.buttonTitle,
+                    sections: button.sections.map((section) => ({
+                        title: section.title,
+                        rows: section.rows.map((row) => ({
+                            title: row.title,
+                            id: row.callbackData,
+                            description: row.description,
+                        })),
+                    })),
+                };
+            } else if ("url" in button) {
+                buttonTypes = "cta_url";
+                buttonObject = {
+                    name: "cta_url",
+                    parameters: { display_text: button.title, url: button.url },
+                };
+            } else if ("callbackData" in button) {
+                buttonTypes = "button";
+                buttonObject = {
+                    buttons: [
+                        ...buttonObject.buttons,
+                        {
+                            type: "reply",
+                            reply: { title: button.title, id: button.callbackData },
+                        },
+                    ],
+                };
+            } else if ("catalog_id" in button) {
+            } else throw new Error("");
+        });
+        return (
+            (await this._sendMessage({
+                to,
+                ...(data.messageID && {
+                    context: { message_id: data.messageID },
+                }),
+                type: "interactive",
+                interactive: {
+                    type: buttonTypes,
+                    body: { text },
+                    ...(data.header && {
+                        header: {
+                            type: "text",
+                            text: data.header,
+                        },
+                    }),
+                    ...(header?.content && {
+                        header: {
+                            type: header?.type,
+                            ...header.content,
+                        },
+                    }),
+                    ...(data.footer && {
+                        footer: {
+                            text: data.footer,
+                        },
+                    }),
+                    action: buttonObject,
+                },
+            })) as SendMessageResponse
+        ).messages[0].id;
+    }
+    private async sendMedia(
+        type: "IMAGE" | "VIDEO" | "DOCUMENT" | "STICKER" | "AUDIO",
+        to: string,
+        media: string,
+        options?: z.infer<typeof sendMediaInteractiveSchema>
+    ): Promise<string> {
+        const validation = await sendMediaInteractiveSchema.safeParse(options);
+
+        if (!validation.success) {
+            throw new ParametersError("Error in the parameters you provided", validation.error);
+        }
+
+        if (!options?.buttons) {
+            return (
+                (await this._sendMessage({
+                    to,
+                    type: type.toLowerCase(),
+                    ...(options?.messageID && {
+                        context: { message_id: options.messageID },
+                    }),
+                    [type.toLowerCase()]: {
+                        ...(options?.capiton && { caption: options.capiton }),
+                        ...(media.startsWith("http") && { link: media }),
+                        ...(isNaN(Number(media)) &&
+                            !media.startsWith("http") && {
+                                id: await this.uploadMedia(media),
+                            }),
+                        ...(Number(media) && { id: media }),
+                        ...(type === "DOCUMENT" && options?.filename && { filename: options?.filename }),
+                    },
+                })) as SendMessageResponse
+            ).messages[0].id;
+        } else {
+            if (!options.capiton) throw new Error("לא ניתן לספק כפתורים ללא תיאור");
+            return await this.sendInteractiveMessage(
+                to,
+                options.capiton,
+                {
+                    ...(options.messageID && { messageId: options.messageID }),
+                    ...(options.footer && { footer: options.footer }),
+                    buttons: options.buttons,
+                },
+                {
+                    type: type.toLowerCase(),
+                    content: {
+                        [type.toLowerCase()]: {
+                            ...(media.startsWith("http") && { link: media }),
+                            ...(isNaN(Number(media)) &&
+                                !media.startsWith("http") && {
+                                    id: await this.uploadMedia(media),
+                                }),
+                            ...(Number(media) && { id: media }),
+                            ...(type === "DOCUMENT" && options?.filename && { filename: options?.filename }),
+                        },
+                    },
+                }
+            );
+        }
+    }
+
+    /**
+     * Sends a message to the specified recipient.
+     *
+     * @param {string} to - The phone number of the recipient.
+     * @param {string} text - The text to send (markdown allowed, max 4096 characters).
+     * @param {object} [options] - Additional options for the message.
+     * @param {boolean} [options.previewUrl=false] - Whether to show a preview of the URL in the message (if any).
+     * @param {string} [options.messageID] - The message ID to reply to.
+     * @param {string} [options.header] - The header of the message (if keyboard is provided, up to 60 characters, no markdown allowed).
+     * @param {string} [options.footer] - The footer of the message (if keyboard is provided, up to 60 characters, markdown has no effect).
+     * @param {object|Array|null} [options.buttons] - The buttons to send with the message. Can be one of the following:
+     *   - An object with `title` and `callbackData` properties (single button).
+     *   - An array of objects with `title` and `callbackData` properties (up to 3 buttons).
+     *   - An object with `title` and `url` properties (single URL button).
+     *   - An object with `buttonTitle` and `sections` properties (section list).
+     * @returns {Promise<string>} A Promise that resolves with the message ID.
+     */
+    public async sendMessage(to: string, text: string, options?: z.infer<typeof sendMessageOptionsSchema>): Promise<string> {
+        const validation = sendMessageSchema.safeParse({ to, text, options });
+
+        if (!validation.success) {
+            throw new ParametersError("Error in the parameters you provided", validation.error);
+        }
+
+        const data: Partial<{
+            to: string;
+            type: "interactive" | "text";
+            context: { message_id: string };
+            interactive: Partial<{
+                type: "list" | "button";
+                header: { type: string; text: string };
+                body: {};
+                footer: { text: string };
+                action: {};
+            }>;
+        }> = {
+            to,
+        };
+
+        if (options?.messageID) data.context = { message_id: options.messageID };
+
+        if (!options?.buttons && !options?.header && !options?.footer) {
+            return (
+                (await this._sendMessage({
+                    ...data,
+                    type: "text",
+                    text: { body: text, preview_url: options?.previewUrl },
+                })) as SendMessageResponse
+            ).messages[0].id;
+        } else return await this.sendInteractiveMessage(to, text, options);
+    }
+
+    /**
+     * Reacts to a message with an emoji.
+     *
+     * @param {string} to - The phone number of the recipient.
+     * @param {string} emoji - The emoji to react with.
+     * @param {string} messageID - The ID of the message to react to.
+     * @returns {Promise<string>} A Promise that resolves with the message ID of the reaction message.
+     * Note that this reaction message ID cannot be used to remove the reaction or perform any other action on it.
+     * Instead, use the original message ID.
+     */
+    public async sendReaction(to: string, emoji: string, messageID: string): Promise<string> {
+        const data = {
+            to,
+            type: "reaction",
+            reaction: {
+                message_id: messageID,
+                emoji,
+            },
+        };
+
+        return ((await this._sendMessage(data)) as SendMessageResponse).messages[0].id;
+    }
+
+    /**
+     * Removes a reaction from a message.
+     *
+     * @param {string} to - The phone number of the recipient.
+     * @param {string} messageID - The ID of the message to remove the reaction from.
+     * @returns {Promise<string>} A Promise that resolves with the message ID of the reaction removal message.
+     * Note that this reaction removal message ID cannot be used to re-react or perform any other action on it.
+     * Instead, use the original message ID.
+     */
+    public async removeReaction(to: string, messageID: string): Promise<string> {
+        return await this.sendReaction(to, messageID, "");
+    }
+
+    /**
+     * Sends a location to a WhatsApp user.
+     *
+     * @param {string} to - The phone ID of the WhatsApp user.
+     * @param {object} location - The location object.
+     * @param {number|string} location.latitude - The latitude of the location.
+     * @param {number|string} location.longitude - The longitude of the location.
+     * @param {object} [options] - Additional options.
+     * @param {string} [options.name] - The name of the location.
+     * @param {string} [options.address] - The address of the location.
+     * @param {string} [options.messageID] - The message ID to reply to.
+     * @returns {Promise<string>} A Promise that resolves with the message ID of the sent location message.
+     * @throws {Error} Will throw an error if the `latitude` or `longitude` is missing from the `location` object.
+     */
+    public async sendLocation(
+        to: string,
+        location: { latitude: number | string; longitude: number | string },
+        options?: { name?: string; address?: string; messageID?: string }
+    ): Promise<string> {
+        // handle error
+        if (!location.latitude || !location.longitude) throw new Error("location is must");
+        const data = {
+            to,
+            ...(options?.messageID && { context: { message_id: options.messageID } }),
+            type: "location",
+            location: {
+                ...location,
+                ...options,
+            },
+        };
+        return ((await this._sendMessage(data)) as SendMessageResponse).messages[0].id;
+    }
+
+    /**
+     * Sends a sticker to a WhatsApp user.
+     *
+     * @param {string} to - The phone ID of the WhatsApp user.
+     * @param {string} sticker - The sticker to send (can be a media ID, URL, or file path).
+     * @param {object} [options] - Additional options.
+     * @param {string} [options.messageID] - The message ID to reply to.
+     * @returns {Promise<string>} A Promise that resolves with the message ID of the sent sticker message.
+     */
+    async sendSticker(to: string, sticker: string, options?: { messageID: string }): Promise<string> {
+        return await this.sendMedia("STICKER", to, sticker, options);
+    }
+
+    /**
+     * Sends a video to a WhatsApp user.
+     *
+     * @param {string} to - The phone ID of the WhatsApp user.
+     * @param {string} video - The video to send (can be a media ID, URL, or file path).
+     * @param {object} [options] - Additional options for the video message.
+     * @param {string} [options.caption] - The caption of the video (markdown allowed). Required when buttons are provided.
+     * @param {string} [options.footer] - The footer of the message (max 60 characters, markdown has no effect). Only applicable when buttons are provided.
+     * @param {object|Array|null} [options.buttons] - The buttons to send with the video. See the `sendMessage` documentation for more details on button options.
+     * @param {string} [options.messageID] - The message ID to reply to. Only works if buttons are provided.
+     * @returns {Promise<string>} A Promise that resolves with the message ID of the sent video message.
+     */
+    async sendVideo(
+        to: string,
+        video: string,
+        options?: Omit<z.infer<typeof sendMediaInteractiveSchema>, "filename">
+    ): Promise<string> {
+        return await this.sendMedia("VIDEO", to, video, options);
+    }
+
+    /**
+     * Sends a document to a WhatsApp user.
+     *
+     * @param {string} to - The phone ID of the WhatsApp user.
+     * @param {string} document - The document to send (can be a media ID, URL, or file path).
+     * @param {object} [options] - Additional options for the document message.
+     * @param {string} [options.caption] - The caption of the document (markdown allowed). Required when buttons are provided.
+     * @param {string} [options.footer] - The footer of the message (max 60 characters, markdown has no effect). Only applicable when buttons are provided.
+     * @param {object|Array|null} [options.buttons] - The buttons to send with the document. See the `sendMessage` documentation for more details on button options.
+     * @param {string} [options.messageID] - The message ID to reply to. Only works if buttons are provided.
+     * @param {string} [options.filename] - The filename of the document. The extension of the filename will specify the format in which the document is displayed in WhatsApp.
+     * @returns {Promise<string>} A Promise that resolves with the message ID of the sent document message.
+     */
+    async sendDocument(to: string, document: string, options?: z.infer<typeof sendMediaInteractiveSchema>): Promise<string> {
+        return await this.sendMedia("DOCUMENT", to, document, options);
+    }
+
+    /**
+     * Sends an audio file to a WhatsApp user.
+     *
+     * @param {string} to - The phone ID of the WhatsApp user.
+     * @param {string} audio - The audio file to send (can be a media ID, URL, or file path).
+     * @param {object} [options] - Additional options.
+     * @param {string} [options.messageID] - The message ID to reply to.
+     * @returns {Promise<string>} A Promise that resolves with the message ID of the sent audio message.
+     */
+    async sendAudio(to: string, audio: string, options?: { messageID: string }): Promise<string> {
+        return await this.sendMedia("AUDIO", to, audio, options);
+    }
+
+    /**
+     * Sends an image to a WhatsApp user.
+     *
+     * @param {string} to - The phone ID of the WhatsApp user.
+     * @param {string} image - The image to send (can be a media ID, URL, or file path).
+     * @param {object} [options] - Additional options for the image message.
+     * @param {string} [options.caption] - The caption of the image (markdown allowed). Required when buttons are provided.
+     * @param {string} [options.footer] - The footer of the message (max 60 characters, markdown has no effect). Only applicable when buttons are provided.
+     * @param {object|Array|null} [options.buttons] - The buttons to send with the image. See the `sendMessage` documentation for more details on button options.
+     * @param {string} [options.messageID] - The message ID to reply to. Only works if buttons are provided.
+     * @returns {Promise<string>} A Promise that resolves with the message ID of the sent image message.
+     */
+    async sendImage(to: string, image: string, options?: Omit<z.infer<typeof sendMediaInteractiveSchema>, "filename">) {
+        return await this.sendMedia("IMAGE", to, image, options);
+    }
+
+    /**
+     * Sends a contact to a WhatsApp recipient.
+     *
+     * @param {string} to - The phone number of the recipient.
+     * @param {string|object} name - The name of the contact. If a string, it's considered the full name. If an object, it can include fields like `firstName`, `lastName`, etc.
+     * @param {string|object|Array<object>} phone - The phone number(s) of the contact. If a string, it's considered a regular phone number. If an object, it can include additional fields like `type` (phone type) and `waID` (WhatsApp ID).
+     * @param {object} [options] - Additional options for the contact.
+     * @param {string} [options.messageID] - The message ID to reply to.
+     * @param {object|Array<object>} [options.addresses] - The addresses of the contact.
+     * @param {object|Array<object>} [options.emails] - The email addresses of the contact.
+     * @param {object|Array<object>} [options.urls] - The website URLs of the contact.
+     * @param {object} [options.org] - The organization details of the contact.
+     * @param {string} [options.birthday] - The birthday of the contact in "YYYY-MM-DD" format.
+     * @returns {Promise<string>} A Promise that resolves with the message ID of the sent contact.
+     */
+    public async sendContact(
+        to: string,
+        name: z.infer<typeof nameSchema>,
+        phone: z.infer<typeof phoneSchema>,
+        options?: z.infer<typeof SendContacOptionSchema>
+    ): Promise<string> {
+        const validation = await SendContacSchema.safeParse({
+            to,
+            name,
+            phones: phone,
+            options,
+        });
+
+        if (!validation.success) {
+            throw new ParametersError("Error in the parameters you provided", validation.error);
+        }
+        return (
+            (await this._sendMessage({
+                to,
+                ...(options?.messageID && {
+                    context: { message_id: options.messageID },
+                }),
+                type: "contacts",
+                contacts: [
+                    {
+                        name: typeof name === "string" ? { first_name: name, formatted_name: name } : name,
+                        phones: typeof phone === "string" ? { phone: "+" + phone } : !Array.isArray(phone) ? [phone] : phone,
+                        ...(options?.birthday && { birthday: options.birthday }),
+                        ...(options?.Org && { org: options.Org }),
+                        ...(options?.emails && {
+                            emails: !Array.isArray(options.emails) ? [options.emails] : options.emails,
+                        }),
+                        ...(options?.addresses && {
+                            addresses: !Array.isArray(options.addresses) ? [options.addresses] : options.addresses,
+                        }),
+                        ...(options?.urls && {
+                            urls: !Array.isArray(options.urls) ? [options.urls] : options.urls,
+                        }),
+                    },
+                ],
+            })) as SendMessageResponse
+        ).messages[0].id;
+    }
+
+    /**
+     * Sends a raw request to the WhatsApp API.
+     *
+     * @param {Object} obj - The request details.
+     * @param {string} obj.method - The HTTP method (GET, POST, PUT, DELETE).
+     * @param {string} obj.endpoint - The API endpoint to send the request to.
+     * @param {Object} [obj.data] - The data to send with the request (for POST, PUT methods).
+     * @param {Object} [obj.headers] - Additional headers to include in the request.
+     * @returns {Promise<T>} A Promise that resolves with the response data.
+     * @template T
+     */
+    public async sendRowRequest<T>(obj: {
+        method: "GET" | "POST" | "PUT" | "DELETE";
+        endpoint: string;
+        data?: object;
+        headers?: object;
+    }) {
+        return await this.makeRequest<T>({ ...obj, url: obj.endpoint });
+    }
+
+    /**
+     * Marks a message as read.
+     *
+     * @param {string} messageID - The ID of the message to mark as read.
+     * @returns {Promise<boolean>} A Promise that resolves with a boolean indicating whether the message was successfully marked as read.
+     */
+    public async markMessageAsRead(messageID: string): Promise<boolean> {
+        const data = {
+            messaging_product: "whatsapp",
+            status: "read",
+            message_id: messageID,
+        };
+        return ((await this._sendMessage(data)) as isSuccessResponse).success;
+    }
+
+    // media
+
+    /**
+     * Deletes media from the WhatsApp server.
+     *
+     * @param {string|number} mediaID - The ID of the media to be deleted.
+     * @returns {Promise<boolean>} A Promise that resolves with a boolean indicating whether the media was successfully deleted.
+     */
+
+    public async deleteMedia(mediaID: string | number): Promise<boolean> {
+        return (
+            await this.makeRequest<isSuccessResponse>({
+                method: "DELETE",
+                url: `/${mediaID.toString()}`,
+                params: { phone_number_id: this.phoneID },
+            })
+        ).success;
+    }
+
+    /**
+     * Uploads media to WhatsApp servers.
+     *
+     * @param {string|} media - The path to the media file or a URL pointing to the media file.
+     * @returns {Promise<string>} A Promise that resolves with a string of the uploaded media.
+     */
+    async uploadMedia(media: string): Promise<string> {
+        const data = new FormData();
+        data.append("messaging_product", "whatsapp");
+
+        if (media.startsWith("http")) {
+            const response = await axios.get(media, { responseType: "arraybuffer" });
+            const mimeType = response.headers["content-type"];
+            data.append("file", response.data, {
+                contentType: mimeType,
+                filename: media.split("/").pop(),
+            });
+            data.append("type", mimeType);
+        } else {
+            if (!fs.existsSync(media)) throw new Error("חובה לספק נתיב קובץ תקין");
+            data.append("file", fs.createReadStream(media));
+        }
+
+        return (
+            await this.makeRequest<{ id: string }>({
+                method: "POST",
+                url: `/${this.phoneID}/media`,
+                data,
+                headers: {
+                    ...data.getHeaders(),
+                },
+            })
+        ).id;
+    }
+
+    // profile
+    async getProfile() {
+        // add the return type
+        const phoneData = await this.makeRequest<GetPhoneNumberByID>({
+            method: "GET",
+            url: `/${this.phoneID}/`,
+        });
+        const fields = ["about", "address", "description", "email", "profile_picture_url", "websites", "vertical"];
+        const profile = (
+            await this.makeRequest<{ data: WhatsAppProfileData[] }>({
+                method: "GET",
+                url: `/${this.phoneID}/whatsapp_business_profile?fields=${fields.join(",")}`,
+            })
+        ).data[0];
+
+        return {
+            verifiedName: phoneData.verified_name,
+            phoneNumber: phoneData.display_phone_number,
+            phoneNumberID: phoneData.id,
+            qualityRating: phoneData.quality_rating,
+            about: profile.about,
+            description: profile.description,
+            address: profile.address,
+            email: profile.email,
+            profilePictureUrl: profile.profile_picture_url,
+            websites: profile.websites,
+            vertical: profile.vertical,
+        };
+    }
+    async registerPhoneNumber(
+        pin: string,
+        dataLocalizationRegion?: "AU" | "ID" | "IN" | "JP" | "SG" | "KR" | "DE" | "CH" | "GB" | "BR" | "BH" | "ZA" | "CA"
+    ): Promise<{ success: boolean }> {
+        return await this.makeRequest<{ success: boolean }>({
+            url: `/${this.phoneID}/register`,
+            method: "POST",
+            data: {
+                ...this.commonKeys,
+                pin,
+                ...(dataLocalizationRegion ? { dataLocalizationRegion } : {}),
+            },
+        });
+    }
+    async setBusinessPublicKey(publicKey: string): Promise<boolean> {
+        return (
+            await this.makeRequest<{ success: boolean }>({
+                url: `/${this.phoneID}/whatsapp_business_encryption`,
+                method: "POST",
+                data: { business_public_key: publicKey },
+            })
+        ).success;
+    }
+    async updateBusinessProfile(info: z.infer<typeof UpdateBusinessProfileSchema>): Promise<isSuccessResponse> {
+        const validation = UpdateBusinessProfileSchema.safeParse(info);
+
+        if (!validation.success) {
+            throw new ParametersError("Error in the parameters you provided", validation.error);
+        }
+
+        const data = Object.fromEntries(
+            Object.entries({
+                about: info.about,
+                address: info.address,
+                description: info.description,
+                email: info.email,
+                profile_picture_handle: info.profilePictureHandle,
+                vertical: info.industry.toString().toLowerCase(),
+                websites: info.websites,
+            }).filter(([_, v]) => v != null && v !== "")
+        );
+
+        return (await this.makeRequest<isSuccessResponse>({
+            url: `/${this.phoneID}/whatsapp_business_profile`,
+            method: "POST",
+            data,
+        })) as isSuccessResponse;
+    }
+
+    // public async updateCommerceSettings(settings: CommerceSettings) {
+    //   if (!settings.isCartEnabled && !settings.isCatalogVisible) {
+    //     throw new Error("At least one setting must be provided");
+    //   }
+    //   const data = {
+    //     is_cart_enabled: settings.isCartEnabled,
+    //     is_catalog_visible: settings.isCatalogVisible,
+    //   };
+    //   return await this.makeRequest({
+    //     method: "POST",
+    //     url: `/${this.phoneID}/whatsapp_commerce_settings`,
+    //     params: data,
+    //   });
+    // }
+    ////////////////////////////////////////////////////////////////
+    // public async getCommerceSettings() {
+    //   return await this.makeRequest<{
+    //     data: CommerceSettings & { catalog_id: string }[];
+    //   }>({
+    //     method: "GET",
+    //     url: `/${this.phoneID}/whatsapp_commerce_settings`,
+    //   });
+    // }
+    ////////////////////////////////////////////////////////////////
+    // public async getNameStatus() {
+    //     return await this.makeRequest<{ id: string; name_status: string }>({
+    //         method: "GET",
+    //         url: `/${this.phoneID}/`,
+    //         params: { fields: "name_status" },
+    //     });
+    // }
+    ////////////////////////////////////////////////////////////////
+    // public async getAllSubscriptions(): Promise<GetAllSubscriptions[]> {
+    //     if (!this.options?.businessAccountID) throw new Error("You must provide a business account to getAllSubscriptions");
+
+    //     return (
+    //         await this.makeRequest<{ data: GetAllSubscriptions[] }>({
+    //             method: "GET",
+    //             url: `/${this.options?.businessAccountID}/subscribed_apps/`,
+    //         })
+    //     ).data;
+    // }
 }

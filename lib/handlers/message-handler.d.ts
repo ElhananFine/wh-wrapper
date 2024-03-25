@@ -2,9 +2,8 @@ import Client from "../client/client";
 import { BaseHandler } from "./base-handler";
 import { MessageType, MessageValueType } from "../types/whatsapp-types";
 import { Image, Sticker, Video, Document, Audio, Location, Reaction, Contacts, Error } from "../types/exports-types";
-type MessageTypes = Exclude<MessageType, "order" | "system" | "interactive" | "request_welcome" | "errors">;
 export default class Message extends BaseHandler {
-    type: MessageTypes;
+    type: MessageType;
     timestamp: Date;
     forwarded: boolean;
     forwardedManyTimes?: boolean;
@@ -28,4 +27,3 @@ export default class Message extends BaseHandler {
     }): Promise<any>;
     markMessageAsRead(): Promise<boolean>;
 }
-export {};

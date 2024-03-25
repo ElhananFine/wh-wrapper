@@ -1,4 +1,5 @@
-import { WhatsAppError } from "./whatsapp-error";
+import { ZodError, ZodIssue, ZodIssueCode } from "zod";
+import { LibraryError, WhatsAppError } from "./base-errors";
 
 export class AuthError extends WhatsAppError {
     constructor(code: number, message: string, fbtrace_id?: string, type?: string, details?: string) {
@@ -108,4 +109,18 @@ export class UnknownError extends WhatsAppError {
     }
 }
 
-export class LibraryError extends Error {}
+export class ParametersError extends LibraryError {
+    errors: { errorCode: string; errorParam: string; errorMessage: string; expected?: string; received?: string }[];
+    constructor(message: string, error: ZodError) {
+        super(message);
+        this.errors = error.issues.map((e: ZodIssue) => ({
+            errorCode: e.code,
+            errorParam: e.path.join("."),
+            errorMessage: e.message,
+            ...(e.code === ZodIssueCode.invalid_type && {
+                expected: e.expected,
+                received: e.received,
+            }),
+        }));
+    }
+}

@@ -1,3 +1,4 @@
+import { WhatsAppProfileVertical } from "./shared";
 export type SendMessageResponse = {
     messaging_product: "whatsapp";
     contacts: [
@@ -25,4 +26,19 @@ export interface GetPhoneNumberByID {
     throughput?: {
         level: string;
     };
+}
+export interface CreateTempleteResponse {
+    id: string;
+    status: "APPROVED" | "PENDING" | "REJECTED";
+    category: "AUTHENTICATION" | "MARKETING" | "UTILITY";
+}
+export interface WhatsAppProfileData {
+    about: string;
+    address: string;
+    description: string;
+    email: string;
+    profile_picture_url: string;
+    websites: string[];
+    vertical: WhatsAppProfileVertical;
+    messaging_product?: string;
 }
