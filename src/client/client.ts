@@ -311,9 +311,10 @@ export default class Client extends EventEmitter {
                 }
 
                 header.text = template.header.text;
-                header.example = {
-                    header_text: variables?.map((v) => v.slice(2, -2)) || [],
-                };
+                if (variables)
+                    header.example = {
+                        header_text: variables?.map((v) => v.slice(2, -2)),
+                    };
             }
             data.components?.push(header);
         }
@@ -329,9 +330,10 @@ export default class Client extends EventEmitter {
             }
 
             body.text = template.body;
-            body.example = {
-                body_text: [variables?.map((v) => v.slice(2, -2)) || []],
-            };
+            if (variables)
+                body.example = {
+                    body_text: [variables?.map((v) => v.slice(2, -2)) || []],
+                };
         } else {
             body.add_security_recommendation = template.body.addSecurityRecommendation;
             // body.code_expiration_minutes = template.body.codeExpirationMinutes; to footer
@@ -418,6 +420,7 @@ export default class Client extends EventEmitter {
 
             data.components?.push(buttonsData as componentsType);
         }
+        console.log(JSON.stringify(data));
         const response = await this.makeRequest<{
             id: string;
             status: string;
