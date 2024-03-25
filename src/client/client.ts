@@ -712,6 +712,21 @@ export default class Client extends EventEmitter {
      *   - An object with `title` and `url` properties (single URL button).
      *   - An object with `buttonTitle` and `sections` properties (section list).
      * @returns {Promise<string>} A Promise that resolves with the message ID.
+     *
+     * @example
+     * const messageId = await sendMessage(recipientPhoneNumber, "Hello, World!");
+     * // messageId: wamid.XXX=
+     *
+     * @example
+     * const buttons = [
+     *   { title: "Help", callbackData: "help" },
+     *   { title: "About", callbackData: "about" }
+     * ];
+     * const messageId = await sendMessage(recipientPhoneNumber, "What can I help you with?", {
+     *   footer: "Powered by wh-wrapper",
+     *   buttons
+     * });
+     * // messageId: wamid.XXX=
      */
     public async sendMessage(to: string, text: string, options?: z.infer<typeof sendMessageOptionsSchema>): Promise<string> {
         const validation = sendMessageSchema.safeParse({ to, text, options });
@@ -755,8 +770,8 @@ export default class Client extends EventEmitter {
      * @param {string} emoji - The emoji to react with.
      * @param {string} messageID - The ID of the message to react to.
      * @returns {Promise<string>} A Promise that resolves with the message ID of the reaction message.
-     * Note that this reaction message ID cannot be used to remove the reaction or perform any other action on it.
-     * Instead, use the original message ID.
+     * Note: that this reaction message ID cannot be used to remove the reaction or perform any other action on it, Instead, use the original message ID.
+     * @example const reactionMessageId = await sendReaction(recipientPhoneNumber, "👍", "wamid.XXX="); // wamid.XXX=
      */
     public async sendReaction(to: string, emoji: string, messageID: string): Promise<string> {
         const data = {
@@ -777,8 +792,8 @@ export default class Client extends EventEmitter {
      * @param {string} to - The phone number of the recipient.
      * @param {string} messageID - The ID of the message to remove the reaction from.
      * @returns {Promise<string>} A Promise that resolves with the message ID of the reaction removal message.
-     * Note that this reaction removal message ID cannot be used to re-react or perform any other action on it.
-     * Instead, use the original message ID.
+     * Note that this reaction removal message ID cannot be used to re-react or perform any other action on it, nstead, use the original message ID.
+     * @example const reactionRemovalMessageId = await removeReaction(recipientPhoneNumber, "wamid.XXX="); // wamid.XXX=
      */
     public async removeReaction(to: string, messageID: string): Promise<string> {
         return await this.sendReaction(to, messageID, "");
@@ -796,6 +811,17 @@ export default class Client extends EventEmitter {
      * @param {string} [options.address] - The address of the location.
      * @param {string} [options.messageID] - The message ID to reply to.
      * @returns {Promise<string>} A Promise that resolves with the message ID of the sent location message.
+     *
+     * @example
+     * const location = {
+     *   latitude: 37.4847483695049,
+     *   longitude: -122.1473373086664,
+     * };
+     * const messageId = await sendLocation(recipientPhoneNumber, location, {
+     *   name: 'WhatsApp HQ',
+     *   address: 'Menlo Park, 1601 Willow Rd, United States',
+     * }); // messageId
+     *
      * @throws {Error} Will throw an error if the `latitude` or `longitude` is missing from the `location` object.
      */
     public async sendLocation(
@@ -825,6 +851,10 @@ export default class Client extends EventEmitter {
      * @param {object} [options] - Additional options.
      * @param {string} [options.messageID] - The message ID to reply to.
      * @returns {Promise<string>} A Promise that resolves with the message ID of the sent sticker message.
+     *
+     * @example
+     * const stickerUrl = 'https://example.com/sticker.webp';
+     * const messageId = await sendSticker(recipientPhoneNumber, stickerUrl); // messageId: wamid.XXX=
      */
     async sendSticker(to: string, sticker: string, options?: { messageID: string }): Promise<string> {
         return await this.sendMedia("STICKER", to, sticker, options);
@@ -841,6 +871,17 @@ export default class Client extends EventEmitter {
      * @param {object|Array|null} [options.buttons] - The buttons to send with the video. See the `sendMessage` documentation for more details on button options.
      * @param {string} [options.messageID] - The message ID to reply to. Only works if buttons are provided.
      * @returns {Promise<string>} A Promise that resolves with the message ID of the sent video message.
+     *
+     * @example
+     * const videoUrl = 'https://example.com/video.mp4';
+     * const messageId = await sendVideo(recipientPhoneNumber, videoUrl, {
+     *   caption: 'This is a video',
+     *   footer: 'Powered by wh-wrapper',
+     *   buttons: {
+     *     title: 'Watch More',
+     *     url: 'https://example.com/videos',
+     *   },
+     * }); // messageId: wamid.XXX=
      */
     async sendVideo(
         to: string,
@@ -862,6 +903,18 @@ export default class Client extends EventEmitter {
      * @param {string} [options.messageID] - The message ID to reply to. Only works if buttons are provided.
      * @param {string} [options.filename] - The filename of the document. The extension of the filename will specify the format in which the document is displayed in WhatsApp.
      * @returns {Promise<string>} A Promise that resolves with the message ID of the sent document message.
+     *
+     * @example
+     * const documentUrl = 'https://example.com/example.pdf';
+     * const messageId = await sendDocument(recipientPhoneNumber, documentUrl, {
+     *   filename: 'fileexample.pdf',
+     *   caption: 'Example PDF',
+     *   footer: 'Powered by wh-wrapper',
+     *   buttons: [
+     *     { title: 'View', callbackData: 'view_document' },
+     *     { title: 'Share', callbackData: 'share_document' },
+     *   ],
+     * }); // messageId: wamid.XXX=
      */
     async sendDocument(to: string, document: string, options?: z.infer<typeof sendMediaInteractiveSchema>): Promise<string> {
         return await this.sendMedia("DOCUMENT", to, document, options);
@@ -875,6 +928,10 @@ export default class Client extends EventEmitter {
      * @param {object} [options] - Additional options.
      * @param {string} [options.messageID] - The message ID to reply to.
      * @returns {Promise<string>} A Promise that resolves with the message ID of the sent audio message.
+     *
+     * @example
+     * const audioUrl = 'https://example.com/audio.mp3';
+     * const messageId = await sendAudio(recipientPhoneNumber, audioUrl); // messageId: wamid.XXX=
      */
     async sendAudio(to: string, audio: string, options?: { messageID: string }): Promise<string> {
         return await this.sendMedia("AUDIO", to, audio, options);
@@ -891,6 +948,17 @@ export default class Client extends EventEmitter {
      * @param {object|Array|null} [options.buttons] - The buttons to send with the image. See the `sendMessage` documentation for more details on button options.
      * @param {string} [options.messageID] - The message ID to reply to. Only works if buttons are provided.
      * @returns {Promise<string>} A Promise that resolves with the message ID of the sent image message.
+     *
+     * @example
+     * const imageUrl = 'https://example.com/image.png';
+     * const messageId = await sendImage(recipientPhoneNumber, imageUrl, {
+     *   caption: 'This is an image!',
+     *   footer: 'Powered by wh-wrapper',
+     *   buttons: [
+     *     { title: 'View', callbackData: 'view_image' },
+     *     { title: 'Share', callbackData: 'share_image' },
+     *   ],
+     * }); // messageId: wamid.XXX=
      */
     async sendImage(to: string, image: string, options?: Omit<z.infer<typeof sendMediaInteractiveSchema>, "filename">) {
         return await this.sendMedia("IMAGE", to, image, options);
@@ -910,6 +978,20 @@ export default class Client extends EventEmitter {
      * @param {object} [options.org] - The organization details of the contact.
      * @param {string} [options.birthday] - The birthday of the contact in "YYYY-MM-DD" format.
      * @returns {Promise<string>} A Promise that resolves with the message ID of the sent contact.
+     *
+     * @example
+     * const contactId = await sendContact(recipientPhoneNumber, "John Doe", "972XXXXXXXXX"); // messageId: wamid.XXX=
+     *
+     * @example
+     * const name = { firstName: "John", lastName: "Doe" };
+     * const phone = { phone: "+1234567890", type: "MOBILE" };
+     * const org = { company: "Acme Inc.", title: "Manager" };
+     * const email = { email: "john.doe@example.com", type: "WORK" };
+     * const contactId = await sendContact(recipientPhoneNumber, name, phone, {
+     *   org,
+     *   emails: [email],
+     *   birthday: "1990-05-15",
+     * }); // messageId: wamid.XXX=
      */
     public async sendContact(
         to: string,
@@ -980,6 +1062,9 @@ export default class Client extends EventEmitter {
      *
      * @param {string} messageID - The ID of the message to mark as read.
      * @returns {Promise<boolean>} A Promise that resolves with a boolean indicating whether the message was successfully marked as read.
+     *
+     * @example
+     * const markAsReadSuccess = await markMessageAsRead("wamid.XXX="); // markAsReadSuccess: boolean
      */
     public async markMessageAsRead(messageID: string): Promise<boolean> {
         const data = {
@@ -997,8 +1082,11 @@ export default class Client extends EventEmitter {
      *
      * @param {string|number} mediaID - The ID of the media to be deleted.
      * @returns {Promise<boolean>} A Promise that resolves with a boolean indicating whether the media was successfully deleted.
+     *
+     * @example
+     * const mediaId = '923733282676675';
+     * const deleteSuccess = await deleteMedia(mediaId); // deleteSuccess: boolean
      */
-
     public async deleteMedia(mediaID: string | number): Promise<boolean> {
         return (
             await this.makeRequest<isSuccessResponse>({
@@ -1014,6 +1102,10 @@ export default class Client extends EventEmitter {
      *
      * @param {string|} media - The path to the media file or a URL pointing to the media file.
      * @returns {Promise<string>} A Promise that resolves with a string of the uploaded media.
+     *
+     * @example
+     * const mediaPath = '/path/to/image.jpg';
+     * const mediaId = await uploadMedia(mediaPath); // mediaId: 'wamid.XXX='
      */
     async uploadMedia(media: string): Promise<string> {
         const data = new FormData();
