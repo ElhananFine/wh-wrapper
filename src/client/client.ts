@@ -41,7 +41,6 @@ import {
     WhatsAppProfileData,
 } from "../types/internal-types";
 import { ClientOptions } from "../types/shared";
-import { GetAllSubscriptions } from "../types/whatsapp-types";
 
 type MessageHandlers = {
     messages: (message: Message) => void;
