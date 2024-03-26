@@ -5,7 +5,12 @@
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "scripts": {
-        "build": "rm -rf lib/ && prettier --write src/ && tsc"
+        "build": "rm -rf lib/ && prettier --write src/ && tsc",
+        "prepare": "husky install"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ElhananFine/wh-wrapper.git"
     },
     "keywords": [
         "whatsapp",
