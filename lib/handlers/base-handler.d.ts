@@ -25,6 +25,6 @@ export declare class BaseHandler {
     replySticker(sticker: string): Promise<string>;
     react(emoji: string): Promise<string>;
     unreact(): Promise<string>;
-    replyTemplate(template: z.infer<typeof SendTemplateSchema>): Promise<import("../types/internal-types").SendMessageResponse | import("../types/internal-types").isSuccessResponse>;
+    replyTemplate(template: z.infer<typeof SendTemplateSchema>): Promise<string>;
     replyContact(name: z.infer<typeof nameSchema>, phone: z.infer<typeof phoneSchema>, options?: Omit<z.infer<typeof SendContacOptionSchema>, "messageID">): Promise<string>;
 }

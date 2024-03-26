@@ -124,6 +124,7 @@ export default class Message extends BaseHandler {
      * Downloads the media of the message if it exists.
      *
      * @async
+     * @method downloadMedia
      * @param {boolean} [saveToFile=false] - Whether to save the media to a file or return it as a buffer.
      * @param {string} [fileName] - The name of the file to save the media as (required only if `saveToFile` is `true`).
      * @param {string} [folderPath] - The path to the folder where the media should be saved (required only if `saveToFile` is `true`; otherwise, the default is the `files` folder in the project directory).
@@ -201,6 +202,7 @@ export default class Message extends BaseHandler {
      * Mark this message as read.
      *
      * @async
+     * @method markMessageAsRead
      * @returns {Promise<boolean>} A Promise that resolves with a boolean indicating whether the message was successfully marked as read.
      */
     async markMessageAsRead(): Promise<boolean> {

@@ -497,7 +497,48 @@ export default class Client extends EventEmitter {
             templateName: template.name.replace(/ /g, "_"),
         } as CreateTempleteResponse & { templateName: string };
     }
-    public async sendTemplate(to: string, template: z.infer<typeof SendTemplateSchema>, options?: { messageID: string }) {
+
+    /**
+     * Sends a WhatsApp message template to a specified recipient.
+     *
+     * @async
+     * @method sendTemplate
+     * @param {string} to - The phone number of the recipient.
+     * @param {Object} template - The template object containing the template details.
+     * @param {string} template.name - The name of the template (max 512 characters).
+     * @param {string} template.language - The language code of the template (e.g., "ENGLISH", "HEBREW").
+     * @param {string|Array<string>} template.body - The body text of the template. Can be a string or an array of strings.
+     * @param {string} [template.header] - The header text of the template.
+     * @param {Array<Object>} [template.buttons] - An array of button objects to include in the template.
+     * @param {string} template.buttons.type - The type of button (e.g., "QuickReplyButton", "UrlButton", "PhoneNumberButton").
+     * @param {string} template.buttons.text - The text to display on the button (for QuickReplyButton).
+     * @param {string} [template.buttons.title] - The title to display on the button (for UrlButton and PhoneNumberButton).
+     * @param {string} [template.buttons.url] - The URL to open when the button is clicked (for UrlButton).
+     * @param {string} [template.buttons.phoneNumber] - The phone number to call when the button is clicked (for PhoneNumberButton).
+     * @param {Object} [options] - Additional options for sending the template.
+     * @param {string} [options.messageID] - The ID of a previous message to associate this template with (for context).
+     * @returns {Promise<string>} A Promise that resolves with the ID of the sent message.
+     * @throws {ParametersError} If the provided parameters are invalid.
+     *
+     * @example
+     * const templateParams = {
+     *   name: 'template_name',
+     *   language: 'HEBREW',
+     *   body: ['150'],
+     *   buttons: [
+     *     { type: 'QuickReplyButton', text: 'buy now' },
+     *     { type: 'QuickReplyButton', text: 'buy later' }
+     *   ]
+     * };
+     *
+     * const messageId = await sendTemplate('+1234567890', templateParams);
+     * // messageId: wamid.XXX=
+     */
+    public async sendTemplate(
+        to: string,
+        template: z.infer<typeof SendTemplateSchema>,
+        options?: { messageID: string }
+    ): Promise<string> {
         const validation = SendTemplateSchema.safeParse(template);
 
         if (!validation.success) {
@@ -506,7 +547,7 @@ export default class Client extends EventEmitter {
         if (!Array.isArray(template.body)) template.body = [template.body];
         if (!Array.isArray(template?.buttons)) template.buttons = [template.buttons];
 
-        return await this._sendMessage({
+        const templateObjsct = {
             to,
             type: "template",
             ...(options?.messageID && {
@@ -518,45 +559,32 @@ export default class Client extends EventEmitter {
                     code: Language[template.language],
                 },
                 components: [
-                    template?.header && {
-                        type: "header",
-                        parameters: [
-                            {
-                                ...(typeof template.header === "string"
-                                    ? {
-                                          type: "text",
-                                          value: template.header,
-                                      }
-                                    : {
-                                          parameters: [
-                                              {
-                                                  type: template.header.type.toLowerCase(),
-                                                  [template.header.type.toLowerCase()]: {
-                                                      ...(template.header.type === "LOCATION" && {
-                                                          ...((obj: { [key: string]: string }) => {
-                                                              delete obj["type"];
-                                                              return obj;
-                                                          })(template.header),
-                                                      }),
-                                                      ...(template.header.type !== "LOCATION" && {
-                                                          ...(template.header.media.startsWith("http") && {
-                                                              link: template.header.media,
-                                                          }),
-                                                          ...(isNaN(Number(template.header.media)) &&
-                                                              !template.header.media.startsWith("http") && {
-                                                                  id: await this.uploadMedia(template.header.media),
-                                                              }),
-                                                          ...(Number(template.header.media) && {
-                                                              id: template.header.media,
-                                                          }),
-                                                      }),
-                                                  },
-                                              },
-                                          ],
-                                      }),
-                            },
-                        ],
-                    },
+                    ...(template.header
+                        ? [
+                              {
+                                  type: "header",
+                                  parameters: [
+                                      {
+                                          ...(typeof template.header === "string"
+                                              ? {
+                                                    type: "text",
+                                                    value: template.header,
+                                                }
+                                              : {
+                                                    parameters: [
+                                                        {
+                                                            type: template.header.type.toLowerCase(),
+                                                            [template.header.type.toLowerCase()]: {
+                                                                // ...
+                                                            },
+                                                        },
+                                                    ],
+                                                }),
+                                      },
+                                  ],
+                              },
+                          ]
+                        : []),
                     {
                         type: "body",
                         parameters: template.body.map((c) =>
@@ -577,39 +605,46 @@ export default class Client extends EventEmitter {
                                   }
                         ),
                     },
-                    template?.buttons &&
-                        template?.buttons.map((p, i) => {
-                            let d: any = { type: "button" };
-                            switch (p?.type) {
-                                case "QuickReplyButton":
-                                    d = {
-                                        ...d,
-                                        sub_type: "quick_reply",
-                                        index: i,
-                                        parameters: [{ type: "payload", payload: p.text }],
-                                    };
-                                    break;
-
-                                case "UrlButton":
-                                    d = {
-                                        ...d,
-                                        sub_type: "url",
-                                        index: i,
-                                        text: p.title,
-                                        url: p.url,
-                                    };
-
-                                default:
-                                    break;
-                            }
-                        }),
-                ],
+                    ...(template.buttons
+                        ? template.buttons.flatMap((p, i) => {
+                              switch (p?.type) {
+                                  case "QuickReplyButton":
+                                      return {
+                                          type: "button",
+                                          sub_type: "quick_reply",
+                                          index: i,
+                                          parameters: [{ type: "payload", payload: p.text }],
+                                      };
+                                  case "UrlButton":
+                                      return {
+                                          type: "button",
+                                          sub_type: "url",
+                                          index: i,
+                                          text: p.title,
+                                          url: p.url,
+                                      };
+                                  case "PhoneNumberButton":
+                                      return {
+                                          type: "button",
+                                          sub_type: "phone_number",
+                                          index: i,
+                                          text: p.title,
+                                          phone_number: p.phoneNumber,
+                                      };
+                                  default:
+                                      return [];
+                              }
+                          })
+                        : []),
+                ].filter(Boolean),
             },
-        });
+        };
+
+        return ((await this._sendMessage(templateObjsct)) as SendMessageResponse).messages[0].id;
     }
 
     // messages
-    private async _sendMessage(content: object) {
+    private async _sendMessage(content: object): Promise<SendMessageResponse | isSuccessResponse> {
         return await this.makeRequest<SendMessageResponse | isSuccessResponse>({
             method: "POST",
             url: `/${this.phoneID}/messages`,
@@ -763,6 +798,7 @@ export default class Client extends EventEmitter {
      * Sends a message to the specified recipient.
      *
      * @async
+     * @method sendMessage
      * @param {string} to - The phone number of the recipient.
      * @param {string} text - The text to send (markdown allowed, max 4096 characters).
      * @param {object} [options] - Additional options for the message.
@@ -831,6 +867,7 @@ export default class Client extends EventEmitter {
      * Reacts to a message with an emoji.
      *
      * @async
+     * @method sendReaction
      * @param {string} to - The phone number of the recipient.
      * @param {string} emoji - The emoji to react with.
      * @param {string} messageID - The ID of the message to react to.
@@ -855,6 +892,7 @@ export default class Client extends EventEmitter {
      * Removes a reaction from a message.
      *
      * @async
+     * @method removeReaction
      * @param {string} to - The phone number of the recipient.
      * @param {string} messageID - The ID of the message to remove the reaction from.
      * @returns {Promise<string>} A Promise that resolves with the message ID of the reaction removal message.
@@ -869,6 +907,7 @@ export default class Client extends EventEmitter {
      * Sends a location to a WhatsApp user.
      *
      * @async
+     * @method sendLocation
      * @param {string} to - The phone ID of the WhatsApp user.
      * @param {object} location - The location object.
      * @param {number|string} location.latitude - The latitude of the location.
@@ -914,6 +953,7 @@ export default class Client extends EventEmitter {
      * Sends a sticker to a WhatsApp user.
      *
      * @async
+     * @method sendSticker
      * @param {string} to - The phone ID of the WhatsApp user.
      * @param {string} sticker - The sticker to send (can be a media ID, URL, or file path).
      * @param {object} [options] - Additional options.
@@ -932,6 +972,7 @@ export default class Client extends EventEmitter {
      * Sends a video to a WhatsApp user.
      *
      * @async
+     * @method sendVideo
      * @param {string} to - The phone ID of the WhatsApp user.
      * @param {string} video - The video to send (can be a media ID, URL, or file path).
      * @param {object} [options] - Additional options for the video message.
@@ -964,6 +1005,7 @@ export default class Client extends EventEmitter {
      * Sends a document to a WhatsApp user.
      *
      * @async
+     * @method sendDocument
      * @param {string} to - The phone ID of the WhatsApp user.
      * @param {string} document - The document to send (can be a media ID, URL, or file path).
      * @param {object} [options] - Additional options for the document message.
@@ -994,6 +1036,7 @@ export default class Client extends EventEmitter {
      * Sends an audio file to a WhatsApp user.
      *
      * @async
+     * @method sendAudio
      * @param {string} to - The phone ID of the WhatsApp user.
      * @param {string} audio - The audio file to send (can be a media ID, URL, or file path).
      * @param {object} [options] - Additional options.
@@ -1012,6 +1055,7 @@ export default class Client extends EventEmitter {
      * Sends an image to a WhatsApp user.
      *
      * @async
+     * @method sendImage
      * @param {string} to - The phone ID of the WhatsApp user.
      * @param {string} image - The image to send (can be a media ID, URL, or file path).
      * @param {object} [options] - Additional options for the image message.
@@ -1040,6 +1084,7 @@ export default class Client extends EventEmitter {
      * Sends a contact to a WhatsApp recipient.
      *
      * @async
+     * @method sendContact
      * @param {string} to - The phone number of the recipient.
      * @param {string|object} name - The name of the contact. If a string, it's considered the full name. If an object, it can include fields like `firstName`, `lastName`, etc.
      * @param {string|object|Array<object>} phone - The phone number(s) of the contact. If a string, it's considered a regular phone number. If an object, it can include additional fields like `type` (phone type) and `waID` (WhatsApp ID).
@@ -1114,6 +1159,7 @@ export default class Client extends EventEmitter {
      * Sends a raw request to the WhatsApp API.
      *
      * @async
+     * @method sendRowRequest
      * @param {Object} obj - The request details.
      * @param {string} obj.method - The HTTP method (GET, POST, PUT, DELETE).
      * @param {string} obj.endpoint - The API endpoint to send the request to.
@@ -1135,6 +1181,7 @@ export default class Client extends EventEmitter {
      * Marks a message as read.
      *
      * @async
+     * @method markMessageAsRead
      * @param {string} messageID - The ID of the message to mark as read.
      * @returns {Promise<boolean>} A Promise that resolves with a boolean indicating whether the message was successfully marked as read.
      *
@@ -1156,6 +1203,7 @@ export default class Client extends EventEmitter {
      * Deletes media from the WhatsApp server.
      *
      * @async
+     * @method deleteMedia
      * @param {string|number} mediaID - The ID of the media to be deleted.
      * @returns {Promise<boolean>} A Promise that resolves with a boolean indicating whether the media was successfully deleted.
      *
@@ -1177,6 +1225,7 @@ export default class Client extends EventEmitter {
      * Uploads media to WhatsApp servers.
      *
      * @async
+     * @method uploadMedia
      * @param {string|} media - The path to the media file or a URL pointing to the media file.
      * @returns {Promise<string>} A Promise that resolves with a string of the uploaded media.
      *

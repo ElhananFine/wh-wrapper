@@ -7,7 +7,7 @@ import { CreateTempleteSchema, SendContacOptionSchema, SendTemplateSchema, Updat
 import Callback from "../handlers/callback-handler";
 import Update from "../handlers/update-handler";
 import RequestWelcome from "../handlers/request-welcome-handler";
-import { CreateTempleteResponse, isSuccessResponse, SendMessageResponse } from "../types/internal-types";
+import { CreateTempleteResponse, isSuccessResponse } from "../types/internal-types";
 import { ClientOptions } from "../types/shared";
 type MessageHandlers = {
     messages: (message: Message) => void;
@@ -44,7 +44,7 @@ export default class Client extends EventEmitter {
     }>;
     sendTemplate(to: string, template: z.infer<typeof SendTemplateSchema>, options?: {
         messageID: string;
-    }): Promise<SendMessageResponse | isSuccessResponse>;
+    }): Promise<string>;
     private _sendMessage;
     private sendInteractiveMessage;
     private sendMedia;
