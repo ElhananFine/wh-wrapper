@@ -250,6 +250,67 @@ export default class Client extends EventEmitter {
     // public async sendProduct() {}
 
     // templates
+    /**
+     * Creates a new WhatsApp message template.
+     *
+     * Templates can be used to send structured messages with placeholders, buttons, and other interactive elements.
+     * Before creating and sending templates, it's recommended to go through the Library's "Managing Message Templates" guide
+     * for a better understanding of templates and their usage.
+     *
+     * @async
+     * @method createTemplate
+     * @param {Object} template - The template object containing the template details.
+     * @param {string} template.name - Name of the template (up to 512 characters, must be unique).
+     * @param {string} template.category - Category of the template. Valid values are "AUTHENTICATION", "MARKETING", or "UTILITY".
+     * @param {string} template.language - The language of the template (See Template language and locale code).
+     * @param {boolean} [template.allowCategoryChange=true] - Whether to allow category change for the template.
+     * @param {Object} [template.header] - Header of the template.
+     * @param {string} [template.header.type="TEXT"] - Type of the header. Valid values are "TEXT", "IMAGE", "DOCUMENT", "VIDEO", or "LOCATION".
+     * @param {string} [template.header.text] - Text content for the header (up to 60 characters, supports 1 variable).
+     * @param {string} [template.header.media] - Media URL or ID for image, document, or video header.
+     * @param {string|Object} template.body - Body of the template.
+     * @param {string} [template.body] - Text content for the body (up to 1024 characters, supports multiple variables).
+     * @param {Object} [template.body] - Configuration for an authentication template body.
+     * @param {number} [template.body.codeExpirationMinutes] - Number of minutes the code or password is valid (between 1 and 90).
+     * @param {boolean} [template.body.addSecurityRecommendation=false] - Whether to include the security recommendation for sharing the code.
+     * @param {string} [template.footer] - Footer text for the template (up to 60 characters).
+     * @param {Array|Object} [template.buttons] - Buttons to include with the template (max 10).
+     * @returns {Promise<Object>} A Promise that resolves with an object containing the template ID, status, category, and (if successful) the template name.
+     * @throws {Error} If the WhatsApp Business account ID is not provided.
+     * @throws {ParametersError} If the provided parameters are invalid.
+     *
+     *  @example
+     * const response = await createTemplate({
+     *   name: 'new productlaunch',
+     *   category: 'MARKETING',
+     *   language: 'ENGLISH_US',
+     *   header: {
+     *     type: 'TEXT',
+     *     media: 'the header text'
+     *   },
+     *   body: 'Introducing the all-new {{item}}! Get {{10%}} off when you pre-order now using the code {{#6567}}.',
+     *   footer: 'Limited time offer',
+     *   buttons: [
+     *     {
+     *       type: 'UrlButton',
+     *       title: 'Pre-Order Now',
+     *       url: 'https://example.com/pre-order/{{item}}'
+     *     },
+     *     {
+     *       type: 'QuickReplyButton',
+     *       text: 'More Details'
+     *     },
+     *     {
+     *       type: 'OTPButton',
+     *       OTPType: 'ONE_TAP',
+     *       packageName: 'com.example.app',
+     *       signatureHash: '1234567890ABCDEF1234567890ABCDEF12345678'
+     *     }
+     *   ]
+     * });
+     *
+     * console.log(response.templateName); // Output: ....
+     */
     public async createTemplate(
         template: z.infer<typeof CreateTempleteSchema>
     ): Promise<CreateTempleteResponse & { templateName: string }> {
@@ -701,6 +762,7 @@ export default class Client extends EventEmitter {
     /**
      * Sends a message to the specified recipient.
      *
+     * @async
      * @param {string} to - The phone number of the recipient.
      * @param {string} text - The text to send (markdown allowed, max 4096 characters).
      * @param {object} [options] - Additional options for the message.
@@ -768,6 +830,7 @@ export default class Client extends EventEmitter {
     /**
      * Reacts to a message with an emoji.
      *
+     * @async
      * @param {string} to - The phone number of the recipient.
      * @param {string} emoji - The emoji to react with.
      * @param {string} messageID - The ID of the message to react to.
@@ -791,6 +854,7 @@ export default class Client extends EventEmitter {
     /**
      * Removes a reaction from a message.
      *
+     * @async
      * @param {string} to - The phone number of the recipient.
      * @param {string} messageID - The ID of the message to remove the reaction from.
      * @returns {Promise<string>} A Promise that resolves with the message ID of the reaction removal message.
@@ -804,6 +868,7 @@ export default class Client extends EventEmitter {
     /**
      * Sends a location to a WhatsApp user.
      *
+     * @async
      * @param {string} to - The phone ID of the WhatsApp user.
      * @param {object} location - The location object.
      * @param {number|string} location.latitude - The latitude of the location.
@@ -848,6 +913,7 @@ export default class Client extends EventEmitter {
     /**
      * Sends a sticker to a WhatsApp user.
      *
+     * @async
      * @param {string} to - The phone ID of the WhatsApp user.
      * @param {string} sticker - The sticker to send (can be a media ID, URL, or file path).
      * @param {object} [options] - Additional options.
@@ -865,6 +931,7 @@ export default class Client extends EventEmitter {
     /**
      * Sends a video to a WhatsApp user.
      *
+     * @async
      * @param {string} to - The phone ID of the WhatsApp user.
      * @param {string} video - The video to send (can be a media ID, URL, or file path).
      * @param {object} [options] - Additional options for the video message.
@@ -896,6 +963,7 @@ export default class Client extends EventEmitter {
     /**
      * Sends a document to a WhatsApp user.
      *
+     * @async
      * @param {string} to - The phone ID of the WhatsApp user.
      * @param {string} document - The document to send (can be a media ID, URL, or file path).
      * @param {object} [options] - Additional options for the document message.
@@ -925,6 +993,7 @@ export default class Client extends EventEmitter {
     /**
      * Sends an audio file to a WhatsApp user.
      *
+     * @async
      * @param {string} to - The phone ID of the WhatsApp user.
      * @param {string} audio - The audio file to send (can be a media ID, URL, or file path).
      * @param {object} [options] - Additional options.
@@ -942,6 +1011,7 @@ export default class Client extends EventEmitter {
     /**
      * Sends an image to a WhatsApp user.
      *
+     * @async
      * @param {string} to - The phone ID of the WhatsApp user.
      * @param {string} image - The image to send (can be a media ID, URL, or file path).
      * @param {object} [options] - Additional options for the image message.
@@ -969,6 +1039,7 @@ export default class Client extends EventEmitter {
     /**
      * Sends a contact to a WhatsApp recipient.
      *
+     * @async
      * @param {string} to - The phone number of the recipient.
      * @param {string|object} name - The name of the contact. If a string, it's considered the full name. If an object, it can include fields like `firstName`, `lastName`, etc.
      * @param {string|object|Array<object>} phone - The phone number(s) of the contact. If a string, it's considered a regular phone number. If an object, it can include additional fields like `type` (phone type) and `waID` (WhatsApp ID).
@@ -1042,6 +1113,7 @@ export default class Client extends EventEmitter {
     /**
      * Sends a raw request to the WhatsApp API.
      *
+     * @async
      * @param {Object} obj - The request details.
      * @param {string} obj.method - The HTTP method (GET, POST, PUT, DELETE).
      * @param {string} obj.endpoint - The API endpoint to send the request to.
@@ -1062,6 +1134,7 @@ export default class Client extends EventEmitter {
     /**
      * Marks a message as read.
      *
+     * @async
      * @param {string} messageID - The ID of the message to mark as read.
      * @returns {Promise<boolean>} A Promise that resolves with a boolean indicating whether the message was successfully marked as read.
      *
@@ -1082,6 +1155,7 @@ export default class Client extends EventEmitter {
     /**
      * Deletes media from the WhatsApp server.
      *
+     * @async
      * @param {string|number} mediaID - The ID of the media to be deleted.
      * @returns {Promise<boolean>} A Promise that resolves with a boolean indicating whether the media was successfully deleted.
      *
@@ -1102,6 +1176,7 @@ export default class Client extends EventEmitter {
     /**
      * Uploads media to WhatsApp servers.
      *
+     * @async
      * @param {string|} media - The path to the media file or a URL pointing to the media file.
      * @returns {Promise<string>} A Promise that resolves with a string of the uploaded media.
      *

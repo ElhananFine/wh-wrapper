@@ -541,6 +541,120 @@ A `Promise` that resolves with the message ID (`string`) of the reaction removal
 const reactionRemovalMessageId = await wh.removeReaction(recipientPhoneNumber, "wamid.XXX="); // wamid.XXX=
 ```
 
+Sure, here's the documentation for the `createTemplate` method, formatted for your documentation site:
+
+#### `createTemplate`
+
+The `createTemplate` method allows you to create a new WhatsApp message template. Templates can be used to send structured messages with placeholders, buttons, and other interactive elements to your WhatsApp contacts.
+
+**Before creating and sending templates**, it's recommended to go through the Library's "Managing Message Templates" guide for a better understanding of templates and their usage.
+
+**Syntax:**
+
+```js
+wh.client.createTemplate(template);
+```
+
+## Parameters
+
+The `createTemplate` method accepts a single parameter, `template`, which is an object containing the details of the template you wish to create.
+
+- `name` (string, required): The name of the template (up to 512 characters, must be unique).
+- `category` (string, required): The category of the template. Valid values are `"AUTHENTICATION"`, `"MARKETING"`, or `"UTILITY"`.
+- `language` (string, required): The language of the template (see [Template language and locale codes](link-to-language-codes)).
+- `allowCategoryChange` (boolean, optional): Whether to allow category change for the template. Defaults to `true`.
+- `header` (object, optional): The header of the template.
+  - `type` (string, required for `header`): The type of the header. Valid values are `"TEXT"`, `"IMAGE"`, `"DOCUMENT"`, `"VIDEO"`, or `"LOCATION"`.
+  - `text` (string, required for `type: "TEXT"`): The text content for the header (up to 60 characters, supports 1 variable).
+  - `media` (string, required for `type: "IMAGE"`, `"DOCUMENT"`, or `"VIDEO"`): ID of a media asset uploaded using the Resumable Upload API.
+- `body` (string or object, required): The body of the template.
+  - If a string, the text content for the body (up to 1024 characters, supports multiple variables).
+  - If an object, the configuration for an authentication template body:
+    - `codeExpirationMinutes` (number, optional): The number of minutes the code or password is valid (between 1 and 90).
+    - `addSecurityRecommendation` (boolean, optional): Whether to include the security recommendation for sharing the code. Defaults to `false`.
+- `footer` (string, optional): The footer text for the template (up to 60 characters).
+- `buttons` (array or object, optional): The buttons to include with the template. See [Button Types](#button-types) for more details.
+
+**Button Types**
+
+The `buttons` parameter can be an array or object containing one or more of the following button types:
+
+- `UrlButton`: A button that opens a specified URL when clicked.
+  - `type` (string, required): `"UrlButton"`.
+  - `title` (string, required): The button text (up to 25 characters, supports 1 variable).
+  - `url` (string, required): The URL to be opened (up to 2000 characters, supports 1 variable).
+- `PhoneNumberButton`: A button that initiates a call to a specified phone number when clicked.
+  - `type` (string, required): `"PhoneNumberButton"`.
+  - `title` (string, required): The button text (up to 25 characters).
+  - `phoneNumber` (string, required): The phone number to be called (up to 20 characters).
+- `QuickReplyButton`: A button that sends a predefined text message when clicked.
+  - `type` (string, required): `"QuickReplyButton"`.
+  - `text` (string, required): The text to be sent as a message (up to 25 characters).
+- `OTPButton`: A button that sends a one-time password (OTP) or code to the user's device.
+  - `type` (string, required): `"OTPButton"`.
+  - `OTPType` (string, required): The type of OTP button. Valid values are `"COPY_CODE"`, `"ONE_TAP"`, or `"ZERO_TAP"`.
+  - `title` (string, optional): The button text for `"COPY_CODE"` type.
+  - `autofillText` (string, optional): The button text for `"ONE_TAP"` type.
+  - `packageName` (string, required for `"ONE_TAP"` or `"ZERO_TAP"`): The Android package name of your app.
+  - `signatureHash` (string, required for `"ONE_TAP"` or `"ZERO_TAP"`): Your app's signing key hash.
+  - `zeroTapTermsAccepted` (boolean, optional): Acceptance of the WhatsApp Business API Terms of Service. Required for `"ZERO_TAP"` type, defaults to `true`.
+- `CopyCodeButton`: A button that copies a code or coupon to the user's clipboard when clicked.
+  - `type` (string, required): `"CopyCodeButton"`.
+  - `example` (string, required): An example of the code or coupon (up to 15 characters).
+- `MPMButton`: A button that sends a multi-product message (MPM) when clicked.
+  - `type` (string, required): `"MPMButton"`.
+- `CatalogButton`: A button that displays a catalog when clicked.
+  - `type` (string, required): `"CatalogButton"`.
+
+## Return Value
+
+The `createTemplate` method returns a `Promise` that resolves with an object containing the following properties:
+
+- `id` (string): The ID of the created template.
+- `status` (string): The status of the created template.
+- `category` (string): The category of the created template.
+- `templateName` (string): The name of the created template.
+
+## Errors
+
+- If the WhatsApp Business account ID is not provided when initializing the client, an `Error` will be thrown.
+- If the provided parameters are invalid, a `ParametersError` will be thrown.
+
+## Example
+
+```js
+const response = await client.createTemplate({
+  name: 'new_product_launch',
+  category: 'MARKETING',
+  language: 'ENGLISH_US',
+  header: {
+    type: 'IMAGE',
+    media: 'https://example.com/product_image.jpg'
+  },
+  body: 'Introducing the all-new {{item-name}}! Get {{10%}} off when you pre-order now using the code {{#45757}}.',
+  footer: 'Limited time offer',
+  buttons: [
+    {
+      type: 'UrlButton',
+      title: 'Pre-Order Now',
+      url: 'https://example.com/pre-order/{{new-item}}'
+    },
+    {
+      type: 'QuickReplyButton',
+      text: 'More Details'
+    },
+    {
+      type: 'OTPButton',
+      OTPType: 'ONE_TAP',
+      packageName: 'com.example.app',
+      signatureHash: '1234567890ABCDEF1234567890ABCDEF12345678'
+    }
+  ]
+});
+
+console.log(response.templateName); // Output: ...
+```
+
 #### `getPhoneData()`
 
 Retrieves information about the phone number associated with the client.
