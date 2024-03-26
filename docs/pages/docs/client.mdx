@@ -541,21 +541,20 @@ A `Promise` that resolves with the message ID (`string`) of the reaction removal
 const reactionRemovalMessageId = await wh.removeReaction(recipientPhoneNumber, "wamid.XXX="); // wamid.XXX=
 ```
 
-Sure, here's the documentation for the `createTemplate` method, formatted for your documentation site:
-
-#### `createTemplate`
+#### `createTemplate(template)`
 
 The `createTemplate` method allows you to create a new WhatsApp message template. Templates can be used to send structured messages with placeholders, buttons, and other interactive elements to your WhatsApp contacts.
 
-**Before creating and sending templates**, it's recommended to go through the Library's "Managing Message Templates" guide for a better understanding of templates and their usage.
-
+<Callout type="info" emoji="ℹ️">
+**Before creating and sending templates**, it's recommended to go through the Library's ["Managing Message Templates"](/docs/Guides/templates) guide for a better understanding of templates and their usage.
+</Callout>
 **Syntax:**
 
 ```js
 wh.client.createTemplate(template);
 ```
 
-## Parameters
+**Parameters:**
 
 The `createTemplate` method accepts a single parameter, `template`, which is an object containing the details of the template you wish to create.
 
@@ -565,14 +564,14 @@ The `createTemplate` method accepts a single parameter, `template`, which is an 
 - `allowCategoryChange` (boolean, optional): Whether to allow category change for the template. Defaults to `true`.
 - `header` (object, optional): The header of the template.
   - `type` (string, required for `header`): The type of the header. Valid values are `"TEXT"`, `"IMAGE"`, `"DOCUMENT"`, `"VIDEO"`, or `"LOCATION"`.
-  - `text` (string, required for `type: "TEXT"`): The text content for the header (up to 60 characters, supports 1 variable).
+  - `text` (string, required for `type: "TEXT"`): The text content for the header (up to 60 characters, supports one placeholder variables using `{{example value}}`).
   - `media` (string, required for `type: "IMAGE"`, `"DOCUMENT"`, or `"VIDEO"`): ID of a media asset uploaded using the Resumable Upload API.
 - `body` (string or object, required): The body of the template.
-  - If a string, the text content for the body (up to 1024 characters, supports multiple variables).
+  - If a string, the text content for the body (up to 1024 characters, supports multiple placeholder variables using `{{example value}}`).
   - If an object, the configuration for an authentication template body:
     - `codeExpirationMinutes` (number, optional): The number of minutes the code or password is valid (between 1 and 90).
     - `addSecurityRecommendation` (boolean, optional): Whether to include the security recommendation for sharing the code. Defaults to `false`.
-- `footer` (string, optional): The footer text for the template (up to 60 characters).
+- `footer` (string, optional): The footer text for the template (up to 60 characters, supports one placeholder variables using `{{example value}}`).
 - `buttons` (array or object, optional): The buttons to include with the template. See [Button Types](#button-types) for more details.
 
 **Button Types**
@@ -581,8 +580,8 @@ The `buttons` parameter can be an array or object containing one or more of the 
 
 - `UrlButton`: A button that opens a specified URL when clicked.
   - `type` (string, required): `"UrlButton"`.
-  - `title` (string, required): The button text (up to 25 characters, supports 1 variable).
-  - `url` (string, required): The URL to be opened (up to 2000 characters, supports 1 variable).
+  - `title` (string, required): The button text (up to 25 characters, supports one placeholder variables using `{{example value}}`).
+  - `url` (string, required): The URL to be opened (up to 2000 characters, supports one placeholder variables using `{{example value}}`).
 - `PhoneNumberButton`: A button that initiates a call to a specified phone number when clicked.
   - `type` (string, required): `"PhoneNumberButton"`.
   - `title` (string, required): The button text (up to 25 characters).
@@ -606,7 +605,9 @@ The `buttons` parameter can be an array or object containing one or more of the 
 - `CatalogButton`: A button that displays a catalog when clicked.
   - `type` (string, required): `"CatalogButton"`.
 
-## Return Value
+**Note:** The template functionality is currently in development, and certain types of templates may not work as expected (e.g., creating authentication templates is currently not supported).
+
+**Returns:**
 
 The `createTemplate` method returns a `Promise` that resolves with an object containing the following properties:
 
@@ -615,12 +616,12 @@ The `createTemplate` method returns a `Promise` that resolves with an object con
 - `category` (string): The category of the created template.
 - `templateName` (string): The name of the created template.
 
-## Errors
+**Errors:**
 
 - If the WhatsApp Business account ID is not provided when initializing the client, an `Error` will be thrown.
 - If the provided parameters are invalid, a `ParametersError` will be thrown.
 
-## Example
+**Example:**
 
 ```js
 const response = await client.createTemplate({
@@ -653,6 +654,56 @@ const response = await client.createTemplate({
 });
 
 console.log(response.templateName); // Output: ...
+```
+
+#### `sendTemplate(to, template, options)`
+
+The `sendTemplate` method allows you to send a WhatsApp message template to a specified recipient.
+
+**Syntax:**
+
+```js
+wh.sendTemplate(to: string, template: Template, options?: { messageID: string }): Promise<string>
+```
+
+**Parameters:**
+
+- `to` (`string`, required): The phone number of the recipient.
+- `template` (`Object`, required): The template object containing the template details.
+  - `name` (`string`, required): The name of the template (max 512 characters).
+  - `language` (`string`, required): The language code of the template (e.g., "ENGLISH", "HEBREW").
+  - `header` (`string` | `Object`, optional): The header of the template.
+  - `body` (`Array<string>` | `Array<Object>`, required): The body of the template, which can include one or more text values, currency values, or date/time values.
+  - `buttons` (`Array<Object>`, optional): The buttons to include with the template. The buttons should be provided according to the buttons defined when creating the template. If the template was created without variables, you don't need to provide the button values.
+- `options` (`Object`, optional): Additional options for sending the template.
+  - `messageID` (`string`, optional): The ID of a previous message to associate this template with (for context).
+
+**Important Notes:**
+
+- The `sendTemplate` functionality is currently in development and does not fully support sending all types of templates. However, simple templates (with buttons, phone numbers, or URLs without variables) should work as expected.
+- Please refer to the ["Managing Message Templates"](/docs/Guides/templates) guide in the Library for a better understanding of templates and their usage.
+
+**Returns:**
+
+A `Promise` that resolves with the message ID (`string`) of the sent template message.
+
+**Example:**
+
+```js
+const templateParams = {
+  name: 'template_name',
+  language: 'LANGUAGE_CODE',
+  body: [
+    'Text value 1',
+    { currency: 'USD', code: 'USD', amount: 1000 }
+  ],
+  buttons: [
+    { type: 'QuickReplyButton', text: 'Buy Now' },
+    { type: 'UrlButton', title: 'Visit Website', url: 'https://example.com' }
+  ]
+};
+
+const messageId = await wh.sendTemplate(recipientPhoneNumber, templateParams); // messageId: wamid.XXX=
 ```
 
 #### `getPhoneData()`
