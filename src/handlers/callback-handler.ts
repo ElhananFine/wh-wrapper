@@ -42,6 +42,13 @@ export default class Callback extends BaseHandler {
         Object.defineProperty(this, "client", { enumerable: false });
     }
 
+    /**
+     * Mark this message as read.
+     *
+     * @async
+     * @method markMessageAsRead
+     * @returns {Promise<boolean>} A Promise that resolves with a boolean indicating whether the message was successfully marked as read.
+     */
     async markMessageAsRead(): Promise<boolean> {
         return await this.client.markMessageAsRead(this.id);
     }
