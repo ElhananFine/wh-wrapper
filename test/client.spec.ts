@@ -4,6 +4,7 @@ import express from "express";
 import Client from "../lib/index";
 import { ClientOptions } from "../lib/types/shared";
 import dotenv from "dotenv";
+import { ParametersError } from "../lib/errors/error-classes";
 
 const phoneIDValue = "";
 const tokenVale = "";
@@ -14,6 +15,9 @@ const appSecretValue = "";
 const businessAccountIDValue = "";
 const webHookEndpointValue = "";
 const portValue = 4006;
+
+///
+const recipientPhoneNumber = "";
 
 dotenv.config({ path: "../.env.example" });
 
@@ -43,6 +47,7 @@ describe("Client", () => {
         sinon.restore();
     });
 
+    // constructor
     describe("constructor", () => {
         it("should throw an error if phoneID and token are not provided", () => {
             expect(() => new Client("", "")).to.throw("Missing Parameters, phoneID and token are required");
@@ -78,6 +83,7 @@ describe("Client", () => {
         });
     });
 
+    // _initialize
     describe("_initialize", () => {
         let serverListenSpy: sinon.SinonSpy;
         let serverUseSpy: sinon.SinonSpy;
@@ -122,6 +128,7 @@ describe("Client", () => {
         });
     });
 
+    // setCallBackUrl
     describe("setCallBackUrl", () => {
         let makeRequestStub: sinon.SinonStub;
 
@@ -162,6 +169,71 @@ describe("Client", () => {
                     verify_token: verifyToken,
                     access_token: "access_token",
                     fields: "message_template_status_update,messages",
+                },
+            });
+        });
+    });
+
+    // sendMessage
+    describe("sendMessage", () => {
+        let makeRequestStub: sinon.SinonStub;
+        const recipientPhoneNumber = "GLOBAL_RECIPIENT_PHONE_NUMBER";
+
+        beforeEach(() => {
+            makeRequestStub = sinon.stub(client, "makeRequest");
+        });
+
+        afterEach(() => {
+            makeRequestStub.restore();
+        });
+
+        it("should throw an error if the 'to' parameter is not a string", async () => {
+            try {
+                await client.sendMessage(123 as any, "Hello");
+                expect.fail("Expected error to be thrown");
+            } catch (err) {
+                expect(err).to.be.an.instanceOf(ParametersError);
+            }
+        });
+
+        it("should throw an error if the 'text' parameter is not provided", async () => {
+            try {
+                await client.sendMessage(recipientPhoneNumber, "");
+                expect.fail("Expected error to be thrown");
+            } catch (err) {
+                expect(err).to.be.an.instanceOf(ParametersError);
+            }
+        });
+
+        it("should throw an error if the 'text' parameter is not a string", async () => {
+            try {
+                await client.sendMessage(recipientPhoneNumber, 123 as any);
+                expect.fail("Expected error to be thrown");
+            } catch (err) {
+                expect(err).to.be.an.instanceOf(ParametersError);
+            }
+        });
+
+        it("should throw an error if the 'text' parameter is longer than 4096 characters", async () => {
+            const longText = "a".repeat(4097);
+            try {
+                await client.sendMessage(recipientPhoneNumber, longText);
+                expect.fail("Expected error to be thrown");
+            } catch (err) {
+                expect(err).to.be.an.instanceOf(ParametersError);
+            }
+        });
+
+        it("should send a text message without any options", async () => {
+            makeRequestStub.resolves({ messages: [{ id: "" }] });
+            client.sendMessage(recipientPhoneNumber, "Hello, World!");
+            expect(makeRequestStub.calledOnce).to.be.true;
+            expect(makeRequestStub.firstCall.args[0]).to.deep.include({
+                to: recipientPhoneNumber,
+                type: "text",
+                text: {
+                    body: "Hello, World!",
+                    preview_url: false,
                 },
             });
         });

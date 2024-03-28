@@ -171,10 +171,6 @@ export const sendMediaInteractiveSchema = z
     })
     .optional();
 
-const sendMediaSchema = z.object({
-    messageID: z.string().optional(),
-});
-
 export const sendMessageSchema = z.object({
     to: z.string({ invalid_type_error: "The to must be a string" }),
     text: z
