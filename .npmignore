@@ -1,0 +1,11 @@
+.env.example
+.DS_Store
+/.github
+/.vscode
+/node_modules
+/src
+/docs
+/test
+/examples
+/docker
+

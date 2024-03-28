@@ -1,0 +1,88 @@
+import { Callout, Tabs, Tab } from "nextra-theme-docs";
+import Link from "next/link";
+
+# Getting Started
+
+## Installation [#installation]
+
+Inside your project directory, run the following:
+
+<Tabs items={['npm', 'pnpm', 'yarn']}>
+  <Tab>
+    ```bash copy
+    npm i wh-rapper
+    ```
+  </Tab>
+  <Tab>
+    ```bash copy
+    pnpm add wh-rapper
+    ```
+  </Tab>
+  <Tab>
+    ```bash copy
+    yarn add wh-rapper
+    ```
+  </Tab>
+</Tabs>
+
+## Features [#features]
+
+
+## Quick Start [#quick-start]
+
+To start using the wh-wrapper library, you need to initialize a new WhatsApp client instance.
+
+```js
+import Client from "wh-wrapper";
+
+const wh = new Client(phoneID, token);
+```
+<Callout type="info" emoji="ℹ️">
+If you don't have a `phoneID` or `token`, or if you haven't set up an account with the Cloud API yet, [please refer to our Quick Start guide to see all the necessary steps.](/docs/Guides/getting-started)
+</Callout>
+
+If you want to receive incoming messages via the WhatsApp webhook, you can initialize the client with a verifyToken parameter.
+
+```js
+import Client from "wh-wrapper";
+
+const wh = new Client(phoneID, token, verifyToken);
+```
+
+<Callout type="info" emoji="ℹ️">
+If you haven't set up a webhook or are unfamiliar with webhooks, [check out our comprehensive Webhook Setup guide for more information.](/docs/Guides/webhook)
+</Callout>
+
+After initializing the client, you can listen for incoming messages by attaching an event listener to the messages event.
+
+```js
+wh.on("messages", async (message) =>  console.log(message));
+```
+
+You can also listen for message status updates (sent, delivered, read, etc.) by attaching an event listener to the statuses event.
+
+```js
+wh.on("statuses", async (status) => console.log(status));
+```
+
+Additionally, you can listen for interactive message callbacks (button presses, section list selections) by attaching an event listener to the `callbacks` event.
+
+```js
+wh.on("callbacks", async (callback) => console.log(callback));
+```
+
+You can also listen for when a user opens a new chat with the bot by attaching an event listener to the ChatOpened event.
+```js
+wh.on("ChatOpened", async (chat) => console.log(chat));
+```
+
+## TODO [#to-do]
+- Added support for Flows
+- Editing incoming message types (TypeScript)
+- Writing the documentation
+
+## License [#license]
+This project is licensed under the MIT License - see the LICENSE.md file for details
+
+
+## Contributing [#contributing]

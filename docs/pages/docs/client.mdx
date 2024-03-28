@@ -1,0 +1,887 @@
+import { Callout } from 'nextra/components'
+
+## `Client` Class
+
+The `Client` class is the main entry point for interacting with the WhatsApp Cloud API. It provides methods for sending messages and handling incoming messages and status updates.
+
+### Initialization
+
+**Without Webhook**
+
+If you don't need to handle incoming messages or updates via a webhook, you can initialize the `Client` instance with just the `phoneID` and `token`:
+
+```js
+import Client from "wh-wrapper";
+
+const wh = new Client(phoneID, token);
+```
+<Callout type="info" emoji="ℹ️">
+If you don't have a `phoneID` or `token`, or if you haven't set up an account with the Cloud API yet, [please refer to our Quick Start guide to see all the necessary steps.](/docs/Guides/getting-started)
+</Callout>
+
+**With Webhook**
+
+If you want to receive incoming messages and updates via a webhook, you need to provide a `verifyToken` along with the `phoneID` and `token`:
+
+```js
+import Client from "wh-wrapper";
+
+const wh = new Client(phoneID, token, verifyToken);
+```
+
+<Callout type="info" emoji="ℹ️">
+If you haven't set up a webhook or are unfamiliar with webhooks, [check out our comprehensive Webhook Setup guide for more information.](/docs/Guides/webhook)
+</Callout>
+
+
+### Constructor Parameters
+
+- `phoneID` (`string`, required): The Phone number ID (Not the phone number itself, the ID can be found in the App dashboard).
+- `token` (`string`, required): The token of the WhatsApp business account (In production, you should use a permanent token).
+- `verifyToken` (`string`, required when using a webhook): The verify token of the registered `callbackUrl` (Required when using a webhook . The verify token can be any string. It is used to challenge the webhook endpoint to verify that the endpoint is valid).
+- `options` (`Object`, optional): Additional configuration options.
+  - `baseURL` (`string`, optional): The base URL of the WhatsApp API (Do not change unless you know what you're doing).
+  - `apiVersion` (`string`, optional): The API version of the WhatsApp Cloud API (defaults to the latest version).
+  - `server` (`Express`, optional): The Express app instance to use for the webhook (required when you want to handle incoming updates).
+  - `callbackUrl` (`string`, optional): The callback URL to register (optional, only if you want the library to register the callback URL for you).
+  - `appID` (`string`, optional): The ID of the app in the App Basic Settings (required only when registering a `callbackUrl`).
+  - `appSecret` (`string`, optional): The secret of the app in the App Basic Settings (required only when registering a `callbackUrl`).
+  - `webHookEndpoint` (`string`, optional): The endpoint to listen for incoming messages (if you're using the server for another purpose, or for multiple WhatsApp clients, you can change this to avoid conflicts).
+  - `businessAccountID` (`string`, optional): The WhatsApp business account ID that owns the phone ID (optional, required for some API methods).
+
+<Callout type="info" emoji="ℹ️">
+Important Note: To receive incoming messages, you need to set up the WhatsApp webhook.
+</Callout>
+The callback URL (for WhatsApp webhook) can be configured through the Facebook dashboard, or the library can automatically set it up if you provide the `verifyToken`, `callbackUrl`, `appID`, and `appSecret` when initializing the client (the `appID` and `appSecret` can be found in the App Basic Settings on the Facebook dashboard).
+<Callout type="warning" emoji="⚠️">
+If you're unfamiliar with the webhook setup process, [we recommend reading our comprehensive guide on configuring the webhook manually or through the library](/docs/webhook).
+</Callout>
+
+
+### Methods
+
+#### `sendMessage(to, text, options?)`
+
+Sends a message to the specified recipient phone number.
+
+**Syntax:**
+
+```js
+wh.sendMessage(
+  to: string,
+  text: string,
+  options?: object
+): Promise<string>
+```
+
+**Parameters:**
+
+- `to` (`string`, required): The phone number of the recipient.
+- `text` (`string`, required): The text to send ([markdown](https://faq.whatsapp.com/539178204879377/) allowed, max 4096 characters).
+- `options` (`Object`, optional): Additional options for the message.
+  - `previewUrl` (`boolean`, optional): Whether to show a preview of the URL in the message (if any).
+  - `messageID` (`string`, optional): The message ID to reply to.
+  - `header` (`string`, optional): The header of the message (if keyboard is provided, up to 60 characters, no [markdown](https://faq.whatsapp.com/539178204879377/) allowed).
+  - `footer` (`string`, optional): The footer of the message (if keyboard is provided, up to 60 characters, [markdown](https://faq.whatsapp.com/539178204879377/) has no effect).
+  - `buttons` (`Object` | `Array` | `null`, optional): The buttons to send with the message. Can be one of the following:
+    - An object with `title` and `callbackData` properties (single button).
+    - An array of objects with `title` and `callbackData` properties (up to 3 buttons).
+    - An object with `title` and `url` properties (single URL button).
+    - An object with `buttonTitle` and `sections` properties (section list).
+
+**Returns:**
+
+A `Promise` that resolves with the message ID (`string`).
+
+**Examples:**
+
+Sending a simple text message:
+
+```js
+const messageId = await wh.sendMessage(recipientPhoneNumber, "Hello, World!") // messageId: wamid.XXX=
+```
+
+Sending a message with buttons:
+
+```js
+const buttons = [
+  { title: "Help", callbackData: "help" },
+  { title: "About", callbackData: "about" },
+];
+const messageId = await wh.sendMessage(recipientPhoneNumber, "What can I help you with?", {
+  footer: "Powered by wh-wrapper",
+  buttons,
+}); // messageId: wamid.XXX=
+```
+
+Sending a message with a URL button:
+
+```js
+const button = { title: "GitHub", url: "https://github.com/your-repo" };
+const messageId = await wh.sendMessage(recipientPhoneNumber, "Check out my GitHub repository!", {
+  footer: "Powered by wh-wrapper",
+  buttons: button,
+}); // messageId: wamid.XXX=
+```
+
+Sending a message with a section list:
+
+```js
+const sections = [
+  {
+    title: "Help",
+    rows: [
+      {
+        title: "Help",
+        callbackData: "help",
+        description: "Get help with wh-wrapper",
+      },
+      {
+        title: "About",
+        callbackData: "about",
+        description: "Learn more about wh-wrapper",
+      },
+    ],
+  },
+  {
+    title: "Other",
+    rows: [
+      {
+        title: "GitHub",
+        callbackData: "github",
+        description: "View the wh-wrapper GitHub repository",
+      },
+    ],
+  },
+];
+const messageId = await wh.sendMessage(recipientPhoneNumber, "What can I help you with?", {
+  footer: "Powered by wh-wrapper",
+  buttons: {
+    buttonTitle: "Choose an option",
+    sections,
+  },
+}); // messageId: wamid.XXX=
+```
+
+#### `sendImage(to, image, options?)`
+
+Sends an image to a WhatsApp user.
+
+**Syntax:**
+
+```js
+wh.sendImage(
+  to: string,
+  image: string,
+  options?: object
+): Promise<string>
+```
+
+**Parameters:**
+
+- `to` (`string`, required): The phone ID of the WhatsApp user.
+- `image` (`string`, required): The image to send. Can be a media ID, URL, or file path.
+- `options` (`Object`, optional): Additional options for the image message.
+  - `caption` (`string`, optional): The caption of the image. [markdown](https://faq.whatsapp.com/539178204879377/) is allowed. Required when buttons are provided.
+  - `footer` (`string`, optional): The footer of the message. [markdown](https://faq.whatsapp.com/539178204879377/) has no effect. Only applicable when buttons are provided.
+  - `buttons` (`Object` | `Array` | `null`, optional): The buttons to send with the video. [See the `sendMessage` documentation](/docs/client#sendmessageto-text-options) for more details on button options.
+  - `messageID` (`string`, optional): The message ID to reply to. Only works if buttons are provided.
+
+**Returns:**
+
+A `Promise` that resolves with the message ID (`string`) of the sent image message.
+
+**Example:**
+
+```js
+const imageUrl = 'https://example.com/image.png';
+const messageId = await wh.sendImage(recipientPhoneNumber, imageUrl, {
+  caption: 'This is an image!',
+  footer: 'Powered by wh-wrapper',
+  buttons: [
+    { title: 'View', callbackData: 'view_image' },
+    { title: 'Share', callbackData: 'share_image' },
+  ],
+}); // messageId: wamid.XXX=
+```
+
+**Note:**
+
+- Images must be 8-bit, RGB or RGBA.
+
+#### `sendVideo(to, video, options?)`
+
+Sends a video to a WhatsApp user.
+
+**Syntax:**
+
+```js
+wh.sendVideo(
+  to: string,
+  video: string,
+  options?: object
+): Promise<string>
+```
+
+**Parameters:**
+
+- `to` (`string`, required): The phone ID of the WhatsApp user.
+- `video` (`string`, required): The video to send. Can be a media ID, URL, or file path.
+- `options` (`Object`, optional): Additional options for the video message.
+  - `caption` (`string`, optional): The caption of the video. [markdown](https://faq.whatsapp.com/539178204879377/) is allowed. Required when buttons are provided.
+  - `footer` (`string`, optional): The footer of the message. [markdown](https://faq.whatsapp.com/539178204879377/) has no effect. Only applicable when buttons are provided.
+  - `buttons` (`Object` | `Array` | `null`, optional): The buttons to send with the video. [See the `sendMessage` documentation](/docs/client#sendmessageto-text-options) for more details on button options.
+  - `messageID` (`string`, optional): The message ID to reply to. Only works if buttons are provided.
+
+**Returns:**
+
+A `Promise` that resolves with the message ID (`string`) of the sent video message.
+
+**Example:**
+
+```js
+const videoUrl = 'https://example.com/video.mp4';
+const messageId = await wh.sendVideo(recipientPhoneNumber, videoUrl, {
+  caption: 'This is a video',
+  footer: 'Powered by wh-wrapper',
+  buttons: {
+    title: 'Watch More',
+    url: 'https://example.com/videos',
+  },
+}); // messageId: wamid.XXX=
+```
+
+**Notes:**
+- Only H.264 video codec and AAC audio codec are supported.
+- Videos with a single audio stream or no audio stream are supported.
+
+#### `sendDocument(to, document, options?)`
+
+Sends a document to a WhatsApp user.
+
+**Syntax:**
+
+```js
+wh.sendDocument(
+  to: string,
+  document: string,
+  options?: object
+): Promise<string>
+```
+
+**Parameters:**
+
+- `to` (`string`, required): The phone ID of the WhatsApp user.
+- `document` (`string`, required): The document to send. Can be a media ID, URL, or file path.
+- `options` (`Object`, optional): Additional options for the document message.
+  - `caption` (`string`, optional): The caption of the document. [markdown](https://faq.whatsapp.com/539178204879377/) is allowed. Required when buttons are provided.
+  - `footer` (`string`, optional): The footer of the message. [markdown](https://faq.whatsapp.com/539178204879377/) has no effect. Only applicable when buttons are provided.
+  - `buttons` (`Object` | `Array` | `null`, optional): The buttons to send with the document. [See the `sendMessage` documentation](/docs/client#sendmessageto-text-options) for more details on button options.
+  - `messageID` (`string`, optional): The message ID to reply to. Only works if buttons are provided.
+  - `filename` (`string`, optional): The filename of the document. The extension of the filename will specify the format in which the document is displayed in WhatsApp.
+
+**Returns:**
+
+A `Promise` that resolves with the message ID (`string`) of the sent document message.
+
+**Example:**
+
+```js
+const documentUrl = 'https://example.com/example.pdf';
+const messageId = await wh.sendDocument(recipientPhoneNumber, documentUrl, {
+  filename: 'fileexample.pdf',
+  caption: 'Example PDF',
+  footer: 'Powered by wh-wrapper',
+  buttons: [
+    { title: 'View', callbackData: 'view_document' },
+    { title: 'Share', callbackData: 'share_document' },
+  ],
+}); // messageId: wamid.XXX=
+```
+
+#### `sendAudio(to, audio, options?)`
+
+Sends an audio file to a WhatsApp user.
+
+**Syntax:**
+
+```js
+wh.sendAudio(
+  to: string,
+  audio: string,
+  options?: object
+): Promise<string>
+```
+
+**Parameters:**
+
+- `to` (`string`, required): The phone ID of the WhatsApp user.
+- `audio` (`string`, required): The audio file to send. Can be a media ID, URL, or file path.
+- `options` (`Object`, optional):
+  - `messageID` (`string`, optional): The message ID to reply to.
+
+**Returns:**
+
+A `Promise` that resolves with the message ID (`string`) of the sent audio message.
+
+**Example:**
+
+```js
+const audioUrl = 'https://example.com/audio.mp3';
+const messageId = await wh.sendAudio(recipientPhoneNumber, audioUrl); // messageId: wamid.XXX=
+```
+
+#### `sendSticker(to, sticker, options?)`
+
+Sends a sticker to a WhatsApp user.
+
+**Syntax:**
+
+```js
+wh.sendSticker(
+  to: string,
+  sticker: string,
+  options?: object
+): Promise<string>
+```
+
+**Parameters:**
+
+- `to` (`string`, required): The phone ID of the WhatsApp user.
+- `sticker` (`string`, required): The sticker to send. Can be a media ID, URL, or file path.
+- `options` (`Object`, optional):
+  - `messageID` (`string`, optional): The message ID to reply to.
+
+**Returns:**
+
+A `Promise` that resolves with the message ID (`string`) of the sent sticker message.
+
+**Example:**
+
+```js
+const stickerUrl = 'https://example.com/sticker.webp';
+const messageId = await wh.sendSticker(recipientPhoneNumber, audioUrl); // messageId: wamid.XXX=
+```
+
+**Notes:**
+- A static sticker needs to be 512x512 pixels and cannot exceed 100 KB.
+- An animated sticker must be 512x512 pixels and cannot exceed 500 KB.
+
+#### `sendLocation(to, location, options?)`
+
+Sends a location to a WhatsApp user.
+
+**Syntax:**
+
+```js
+wh.sendLocation(
+  to: string,
+  location: object,
+  options?: object
+): Promise<string>
+```
+
+**Parameters:**
+
+- `to` (`string`, required): The phone ID of the WhatsApp user.
+- `location` (`Object`, required):
+  - `latitude` (`number` | `string`, required): The latitude of the location.
+  - `longitude` (`number` | `string`, required): The longitude of the location.
+- `options` (`Object`, optional):
+  - `name` (`string`, optional): The name of the location.
+  - `address` (`string`, optional): The address of the location.
+  - `messageID` (`string`, optional): The message ID to reply to.
+
+**Returns:**
+
+A `Promise` that resolves with the message ID (`string`) of the sent location message.
+
+**Example:**
+
+```js
+const location = {
+  latitude: 37.4847483695049,
+  longitude: -122.1473373086664,
+};
+const messageId = await wh.sendLocation(recipientPhoneNumber, location, {
+  name: 'WhatsApp HQ',
+  address: 'Menlo Park, 1601 Willow Rd, United States',
+});  // messageId: wamid.XXX=
+```
+
+#### `sendContact(to, name, phone, options?)`
+
+Sends a contact to a WhatsApp recipient.
+
+**Syntax:**
+
+```js
+wh.sendContact(
+  to: string, 
+  name: string | object,
+  phone: string | object | Array<object>,
+  options?: object
+): Promise<string>
+```
+
+**Parameters:**
+
+- `to` (`string`, required): The phone number of the recipient.
+- `name` (`string` or `NameObject`, required): The name of the contact. If a string, it's considered the full name. If an object, it can include fields like `firstName`, `lastName`, etc.
+- `phone` (`string`, `PhoneObject` or `Array<PhoneObject>`, required): The phone number(s) of the contact. If a string, it's considered a regular phone number. If an object, it can include additional fields like `type` (phone type) and `waID` (WhatsApp ID).
+- `options` (`object`, optional): Additional options for the contact.
+
+**ContactOptions:**
+
+- `messageID` (`string`, optional): The message ID to reply to.
+- `addresses` (`Address` or `Array<Address>`, optional): The addresses of the contact.
+- `emails` (`Email` or `Array<Email>`, optional): The email addresses of the contact.
+- `urls` (`Url` or `Array<Url>`, optional): The website URLs of the contact.
+- `org` (`Organization`, optional): The organization details of the contact.
+- `birthday` (`string`, optional): The birthday of the contact in "YYYY-MM-DD" format.
+
+**Returns:**
+
+A `Promise` that resolves with the message ID (`string`) of the sent contact.
+
+**Examples:**
+
+Sending a basic contact:
+
+```js
+const contactId = await wh.sendContact(recipientPhoneNumber, "John Doe", "972XXXXXXXXX"); // messageId: wamid.XXX=
+```
+
+Sending a contact with additional details:
+
+```js
+const name = { firstName: "John", lastName: "Doe" };
+const phone = { phone: "+1234567890", type: "MOBILE" };
+const org = { company: "Acme Inc.", title: "Manager" };
+const email = { email: "john.doe@example.com", type: "WORK" };
+const contactId = await wh.sendContact(recipientPhoneNumber, name, phone, {
+  org,
+  emails: [email],
+  birthday: "1990-05-15",
+}); // messageId: wamid.XXX=
+```
+
+#### `markMessageAsRead(messageID)`
+
+Marks a message as read.
+
+**Syntax:**
+
+```js
+wh.markMessageAsRead(messageID: string): Promise<boolean>
+```
+
+**Parameters:**
+
+- `messageID` (`string`, required): The ID of the message to mark as read.
+
+**Returns:**
+
+A `Promise` that resolves with a `boolean` indicating whether the message was successfully marked as read.
+
+**Example:**
+
+```js
+const markAsReadSuccess = await wh.markMessageAsRead("wamid.XXX="); // boolean
+```
+
+#### `sendReaction(to, emoji, messageID)`
+
+Reacts to a message with an emoji.
+
+**Syntax:**
+
+```js
+wh.sendReaction(to: string, emoji: string, messageID: string): Promise<string>
+```
+
+**Parameters:**
+
+- `to` (`string`, required): The phone number of the recipient.
+- `emoji` (`string`, required): The emoji to react with.
+- `messageID` (`string`, required): The ID of the message to react to.
+
+**Returns:**
+
+A `Promise` that resolves with the message ID (`string`) of the reaction message. Note that this reaction message ID cannot be used to remove the reaction or perform any other action on it. Instead, use the original message ID.
+
+**Example:**
+
+```js
+const reactionMessageId = await wh.sendReaction(recipientPhoneNumber, "👍", "wamid.XXX="); // wamid.XXX=
+```
+
+#### `removeReaction(to, messageID): `
+
+Removes a reaction from a message.
+
+**Syntax:**
+
+```js
+wh.removeReaction(to: string, messageID: string): Promise<string>
+```
+
+**Parameters:**
+
+- `to` (`string`, required): The phone number of the recipient.
+- `messageID` (`string`, required): The ID of the message to remove the reaction from.
+
+**Returns:**
+
+A `Promise` that resolves with the message ID (`string`) of the reaction removal message. Note that this reaction removal message ID cannot be used to re-react or perform any other action on it. Instead, use the original message ID.
+
+**Example:**
+
+```js
+const reactionRemovalMessageId = await wh.removeReaction(recipientPhoneNumber, "wamid.XXX="); // wamid.XXX=
+```
+
+#### `createTemplate(template)`
+
+The `createTemplate` method allows you to create a new WhatsApp message template. Templates can be used to send structured messages with placeholders, buttons, and other interactive elements to your WhatsApp contacts.
+
+<Callout type="info" emoji="ℹ️">
+**Before creating and sending templates**, it's recommended to go through the Library's ["Managing Message Templates"](/docs/Guides/templates) guide for a better understanding of templates and their usage.
+</Callout>
+**Syntax:**
+
+```js
+wh.client.createTemplate(template);
+```
+
+**Parameters:**
+
+The `createTemplate` method accepts a single parameter, `template`, which is an object containing the details of the template you wish to create.
+
+- `name` (string, required): The name of the template (up to 512 characters, must be unique).
+- `category` (string, required): The category of the template. Valid values are `"AUTHENTICATION"`, `"MARKETING"`, or `"UTILITY"`.
+- `language` (string, required): The language of the template (see [Template language and locale codes](link-to-language-codes)).
+- `allowCategoryChange` (boolean, optional): Whether to allow category change for the template. Defaults to `true`.
+- `header` (object, optional): The header of the template.
+  - `type` (string, required for `header`): The type of the header. Valid values are `"TEXT"`, `"IMAGE"`, `"DOCUMENT"`, `"VIDEO"`, or `"LOCATION"`.
+  - `text` (string, required for `type: "TEXT"`): The text content for the header (up to 60 characters, supports one placeholder variables using `{{example value}}`).
+  - `media` (string, required for `type: "IMAGE"`, `"DOCUMENT"`, or `"VIDEO"`): ID of a media asset uploaded using the Resumable Upload API.
+- `body` (string or object, required): The body of the template.
+  - If a string, the text content for the body (up to 1024 characters, supports multiple placeholder variables using `{{example value}}`).
+  - If an object, the configuration for an authentication template body:
+    - `codeExpirationMinutes` (number, optional): The number of minutes the code or password is valid (between 1 and 90).
+    - `addSecurityRecommendation` (boolean, optional): Whether to include the security recommendation for sharing the code. Defaults to `false`.
+- `footer` (string, optional): The footer text for the template (up to 60 characters, supports one placeholder variables using `{{example value}}`).
+- `buttons` (array or object, optional): The buttons to include with the template. See [Button Types](#button-types) for more details.
+
+**Button Types**
+
+The `buttons` parameter can be an array or object containing one or more of the following button types:
+
+- `UrlButton`: A button that opens a specified URL when clicked.
+  - `type` (string, required): `"UrlButton"`.
+  - `title` (string, required): The button text (up to 25 characters, supports one placeholder variables using `{{example value}}`).
+  - `url` (string, required): The URL to be opened (up to 2000 characters, supports one placeholder variables using `{{example value}}`).
+- `PhoneNumberButton`: A button that initiates a call to a specified phone number when clicked.
+  - `type` (string, required): `"PhoneNumberButton"`.
+  - `title` (string, required): The button text (up to 25 characters).
+  - `phoneNumber` (string, required): The phone number to be called (up to 20 characters).
+- `QuickReplyButton`: A button that sends a predefined text message when clicked.
+  - `type` (string, required): `"QuickReplyButton"`.
+  - `text` (string, required): The text to be sent as a message (up to 25 characters).
+- `OTPButton`: A button that sends a one-time password (OTP) or code to the user's device.
+  - `type` (string, required): `"OTPButton"`.
+  - `OTPType` (string, required): The type of OTP button. Valid values are `"COPY_CODE"`, `"ONE_TAP"`, or `"ZERO_TAP"`.
+  - `title` (string, optional): The button text for `"COPY_CODE"` type.
+  - `autofillText` (string, optional): The button text for `"ONE_TAP"` type.
+  - `packageName` (string, required for `"ONE_TAP"` or `"ZERO_TAP"`): The Android package name of your app.
+  - `signatureHash` (string, required for `"ONE_TAP"` or `"ZERO_TAP"`): Your app's signing key hash.
+  - `zeroTapTermsAccepted` (boolean, optional): Acceptance of the WhatsApp Business API Terms of Service. Required for `"ZERO_TAP"` type, defaults to `true`.
+- `CopyCodeButton`: A button that copies a code or coupon to the user's clipboard when clicked.
+  - `type` (string, required): `"CopyCodeButton"`.
+  - `example` (string, required): An example of the code or coupon (up to 15 characters).
+- `MPMButton`: A button that sends a multi-product message (MPM) when clicked.
+  - `type` (string, required): `"MPMButton"`.
+- `CatalogButton`: A button that displays a catalog when clicked.
+  - `type` (string, required): `"CatalogButton"`.
+
+**Note:** The template functionality is currently in development, and certain types of templates may not work as expected (e.g., creating authentication templates is currently not supported).
+
+**Returns:**
+
+The `createTemplate` method returns a `Promise` that resolves with an object containing the following properties:
+
+- `id` (string): The ID of the created template.
+- `status` (string): The status of the created template.
+- `category` (string): The category of the created template.
+- `templateName` (string): The name of the created template.
+
+**Errors:**
+
+- If the WhatsApp Business account ID is not provided when initializing the client, an `Error` will be thrown.
+- If the provided parameters are invalid, a `ParametersError` will be thrown.
+
+**Example:**
+
+```js
+const response = await client.createTemplate({
+  name: 'new_product_launch',
+  category: 'MARKETING',
+  language: 'ENGLISH_US',
+  header: {
+    type: 'IMAGE',
+    media: 'https://example.com/product_image.jpg'
+  },
+  body: 'Introducing the all-new {{item-name}}! Get {{10%}} off when you pre-order now using the code {{#45757}}.',
+  footer: 'Limited time offer',
+  buttons: [
+    {
+      type: 'UrlButton',
+      title: 'Pre-Order Now',
+      url: 'https://example.com/pre-order/{{new-item}}'
+    },
+    {
+      type: 'QuickReplyButton',
+      text: 'More Details'
+    },
+    {
+      type: 'OTPButton',
+      OTPType: 'ONE_TAP',
+      packageName: 'com.example.app',
+      signatureHash: '1234567890ABCDEF1234567890ABCDEF12345678'
+    }
+  ]
+});
+
+console.log(response.templateName); // Output: ...
+```
+
+#### `sendTemplate(to, template, options)`
+
+The `sendTemplate` method allows you to send a WhatsApp message template to a specified recipient.
+
+**Syntax:**
+
+```js
+wh.sendTemplate(to: string, template: Template, options?: { messageID: string }): Promise<string>
+```
+
+**Parameters:**
+
+- `to` (`string`, required): The phone number of the recipient.
+- `template` (`Object`, required): The template object containing the template details.
+  - `name` (`string`, required): The name of the template (max 512 characters).
+  - `language` (`string`, required): The language code of the template (e.g., "ENGLISH", "HEBREW").
+  - `header` (`string` | `Object`, optional): The header of the template.
+  - `body` (`Array<string>` | `Array<Object>`, required): The body of the template, which can include one or more text values, currency values, or date/time values.
+  - `buttons` (`Array<Object>`, optional): The buttons to include with the template. The buttons should be provided according to the buttons defined when creating the template. If the template was created without variables, you don't need to provide the button values.
+- `options` (`Object`, optional): Additional options for sending the template.
+  - `messageID` (`string`, optional): The ID of a previous message to associate this template with (for context).
+
+**Important Notes:**
+
+- The `sendTemplate` functionality is currently in development and does not fully support sending all types of templates. However, simple templates (with buttons, phone numbers, or URLs without variables) should work as expected.
+- Please refer to the ["Managing Message Templates"](/docs/Guides/templates) guide in the Library for a better understanding of templates and their usage.
+
+**Returns:**
+
+A `Promise` that resolves with the message ID (`string`) of the sent template message.
+
+**Example:**
+
+```js
+const templateParams = {
+  name: 'template_name',
+  language: 'LANGUAGE_CODE',
+  body: [
+    'Text value 1',
+    { currency: 'USD', code: 'USD', amount: 1000 }
+  ],
+  buttons: [
+    { type: 'QuickReplyButton', text: 'Buy Now' },
+    { type: 'UrlButton', title: 'Visit Website', url: 'https://example.com' }
+  ]
+};
+
+const messageId = await wh.sendTemplate(recipientPhoneNumber, templateParams); // messageId: wamid.XXX=
+```
+
+#### `getPhoneData()`
+
+Retrieves information about the phone number associated with the client.
+
+**Syntax:**
+
+```js
+wh.getPhoneData(): Promise<GetPhoneData>
+```
+
+**Parameters:**
+
+None.
+
+**Returns:**
+
+A `Promise` that resolves with an object containing the following properties:
+
+- `verifiedName` (`string`): The verified name associated with the phone number.
+- `phoneNumber` (`string`): The phone number in international format.
+- `qualityRating` (`string`): The quality rating of the phone number .
+- `platformType` (`string`): The platform type associated with the phone number (default: CLOUD_API).
+- `phoneNumberID` (`string`): The ID of the phone number.
+
+**Example:**
+
+```js
+const phoneData = await wh.getPhoneData();
+console.log(phoneData);
+```
+
+#### `getBusinessProfile()`
+
+Retrieves the business profile data for the associated WhatsApp account.
+
+**Syntax:**
+
+```js
+wh.getBusinessProfile(): Promise<WhatsAppProfileData>
+```
+**Parameters:**
+
+None.
+ 
+**Returns:**
+
+A `Promise` that resolves with an object containing the business profile data. The returned object has the following properties:
+
+- `about` (`string`): A brief description of the business.
+- `address` (`string`): The business address.
+- `description` (`string`): A longer description of the business.
+- `email` (`string`): The business email address.
+- `profile_picture_url` (`string`): The URL of the business profile picture.
+- `websites` (`string[]`): An array of website URLs associated with the business.
+- `vertical` (`"UNDEFINED" | "OTHER" | "AUTO" | "BEAUTY" | "APPAREL" | "EDU" | "ENTERTAIN" | "EVENT_PLAN" | "FINANCE" | "GROCERY" | "GOVT" | "HOTEL" | "HEALTH" | "NONPROFIT" | "PROF_SERVICES" | "RETAIL" | "TRAVEL" | "RESTAURANT" | "NOT_A_BIZ"`): The business industry category.
+
+**Example:**
+
+```js
+const businessProfile = await wh.getBusinessProfile();
+console.log(businessProfile);
+// Output:
+// {
+//   about: 'We sell high-quality products.',
+//   address: '123 Main St, Anytown USA',
+//   description: 'Our business was founded in 2010 with a mission to...',
+//   email: 'contact@example.com',
+//   profile_picture_url: 'https://example.com/profile.jpg',
+//   websites: ['https://example.com', 'https://example.net'],
+//   vertical: 'retail'
+// }
+```
+
+#### `updateBusinessProfile(info)`
+
+Updates the business profile data for the associated WhatsApp account.
+
+**Syntax:**
+
+```js
+wh.updateBusinessProfile(info: UpdateBusinessProfileData): Promise<boolean>
+```
+
+**Parameters:**
+
+- `info` (`UpdateBusinessProfileData`): An object containing the business profile data to update. The `UpdateBusinessProfileData` interface has the following properties:
+  - `about` (`string`, optional): A brief description of the business (max 139 characters).
+  - `address` (`string`, optional): The business address (max 256 characters).
+  - `description` (`string`, optional): A longer description of the business (max 512 characters).
+  - `email` (`string`, optional): The business email address (max 128 characters).
+  - `industry` (`"UNDEFINED" | "OTHER" | "AUTO" | "BEAUTY" | "APPAREL" | "EDU" | "ENTERTAIN" | "EVENT_PLAN" | "FINANCE" | "GROCERY" | "GOVT" | "HOTEL" | "HEALTH" | "NONPROFIT" | "PROF_SERVICES" | "RETAIL" | "TRAVEL" | "RESTAURANT" | "NOT_A_BIZ"`, optional): The business industry category.
+  - `profilePictureHandle` (`string`, optional): The handle (ID) of the new business profile picture.
+  - `websites` (`string[]`, optional): An array of website URLs associated with the business (max 2 URLs, each up to 256 characters).
+
+**Returns:**
+
+A `Promise` that resolves with a `boolean` object indicating whether the business profile update was successful.
+
+**Example:**
+
+```js
+const updateData = {
+  about: 'We sell high-quality products.',
+  address: '123 Main St, Anytown USA',
+  description: 'Our business was founded in 2010 with a mission to...',
+  email: 'contact@example.com',
+  industry: 'RETAIL',
+  websites: ['https://example.com', 'https://example.net'],
+};
+const updateSuccess = await wh.updateBusinessProfile(updateData); // boolean
+```
+
+#### `uploadMedia(media)`
+
+Uploads media (image, video, audio, sticker, or document) to the WhatsApp server.
+
+**Syntax:**
+
+```js
+wh.uploadMedia(media: string): Promise<string>
+```
+
+**Parameters:**
+
+- `media` (`string`, required): The path to the media file or a URL pointing to the media file.
+
+**Returns:**
+
+A `Promise` that resolves with the media ID (`string`) of the uploaded media.
+
+**Example:**
+
+Uploading a local file:
+
+```js
+const mediaPath = '/path/to/image.jpg';
+const mediaId = await wh.uploadMedia(mediaPath);  // mediaId: 'wamid.XXX='
+```
+
+Uploading from a URL:
+
+```js
+const mediaUrl = 'https://example.com/image.jpg';
+const mediaId = await wh.uploadMedia(mediaUrl); // mediaId: 'wamid.XXX='
+```
+
+**Note:**
+
+- Currently, this function only supports uploading media from a local file path or a URL.
+- Support for uploading media from Base64 strings or binary data will be added in the future.
+
+#### `deleteMedia(mediaID)`
+
+Deletes media from the WhatsApp server.
+
+**Syntax:**
+
+```js
+wh.deleteMedia(mediaID: string | number): Promise<boolean>
+```
+
+**Parameters:**
+
+- `mediaID` (`string` or `number`, required): The ID of the media to be deleted.
+
+**Returns:**
+
+A `Promise` that resolves with a `boolean` indicating whether the message was successfully marked as read.
+
+**Example:**
+
+```js
+const mediaId = '923733282676675';
+const deleteSuccess = await wh.deleteMedia(mediaId); // deleteSuccess: boolean;
+```
+
+**Note:**
+
+- The `mediaID` can be either a string or a number, as it will be converted to a string when making the request.

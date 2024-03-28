@@ -1,0 +1,25 @@
+## Chat Opened Event
+
+The `ChatOpened` event is emitted when a user opens a new chat with the bot. This includes cases where the user deletes the previous chat and opens a new one.
+
+**Listening for the `ChatOpened` event:**
+
+```javascript
+wh.on("ChatOpened", async (chat: RequestWelcome) => {
+  console.log(chat);
+});
+```
+
+**The `RequestWelcome` class:**
+
+- `type` (string): Always `request_welcome`.
+- `timestamp` (string): The time when the chat was opened.
+- `id` (string): The ID of the chat.
+- `metadata` (object):
+  - `displayPhoneNumber` (string): The phone number to which the message was sent.
+  - `phoneNumberID` (string): The ID of the phone number to which the message was sent.
+- `fromUser` (object):
+  - `whid` (string): The WhatsApp ID of the user (the phone number with the country code).
+  - `name` (string): The name of the sender.
+
+For more information on the available methods for handling the `ChatOpened` event, see the [Event Handlers documentation](/docs/listeners#common-methods).

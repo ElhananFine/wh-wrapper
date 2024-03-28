@@ -1,0 +1,106 @@
+## Incoming Messages Event
+
+The `messages` event is emitted when a new message is received from a user. This includes text messages, media messages, reactions, locations, and other types of messages.
+
+**Listening for the `messages` event:**
+
+```javascript
+wh.on("messages", async (message: Message) => {
+  console.log(message);
+});
+```
+
+**The `Message` class:**
+
+- `id` (string): The ID of the message (useful for replying to the message, creating threads, and marking as read).
+- `metadata` (object):
+  - `displayPhoneNumber` (string): The phone number to which the message was sent.
+  - `phoneNumberID` (string): The ID of the phone number to which the message was sent.
+- `type` (string): The type of the message, which can be one of the following (in lowercase): `text`, `image`, `video`, `document`, `audio`, `sticker`, `reaction`, `location`, `contacts`, `unsupported`. Additionally, there will be a property with the same name as the type that will contain the actual content, If the message type is `unsupported`, there will be an property named `errors` .
+- `fromUser` (object):
+  - `WhID` (string): The WhatsApp ID of the user (the phone number with the country code).
+  - `name` (string): The name of the sender.
+- `timestamp` (Date): The time of the message.
+- `hasMedia` (boolean): Whether the message contains media (`image`, `video`, `sticker`, `document`, or `audio`).
+- `isReply` (boolean): Whether the message is a reply. If `true`, the `context` property will be present.
+- `context` (object, optional): An object with `messageID` - The ID of the message that was replied to, and `messageFrom` (string) – The number of the user who sent the message that was replied to. This will be present only if the incoming message is a reply to another message.
+- `forwarded` (boolean): Whether the message was forwarded.
+- `forwardedManyTimes` (boolean): Whether the message was forwarded many times. This will only appear if `forwarded` is `true`.
+- `text` (string): The text of the message (if the message type is `type.text`).
+- `image` (object): The image of the message (if the message type is `type.image`), with properties: `sha256`, `id`, `caption` (optional), `mimeType`.
+- `video` (object): The video of the message (if the message type is `type.video`), with the same properties as `image`.
+- `sticker` (object): The sticker of the message (if the message type is `type.sticker`), with the same properties as `image`, but instead of `caption`, it has `animated` (boolean) indicating whether the sticker is animated.
+- `audio` (object): The audio of the message (if the message type is `type.audio`), with the same properties as `image`, but instead of `caption`, it has `voice` (boolean) indicating whether the audio is a voice message or just an audio file.
+- `document` (object): The document of the message (if the message type is `type.document`), with the same properties as `image`, plus an optional `filename` property with the name of the file.
+- `reaction` (object): The reaction of the message (if the message type is `type.reaction`), with properties: `messageID` (the ID of the message that was reacted to), `type` (either `react` or `unReact`), and if `type` is `react`, an additional property `emoji` with the emoji used for the reaction.
+- `location` (object): The location of the message (if the message type is `type.location`), with properties: `latitude` (number), `longitude` (number), `name` (string, optional), `address` (string, optional), `url` (string, optional).
+- `contacts`: If the message type is `contacts`, documentation for this will be added soon.
+- `error` (object): The error of the message (if the message type is `type.unsupported`), with properties: `errorCode` - The error class (detailed documentation for error codes can be found on the Errors page).
+
+### **Methods**
+#### `downloadMedia()`
+
+Downloads the media of the message, if `hasMedia` is `true`.
+
+**Syntax:**
+
+```js
+message.downloadMedia(
+  saveToFile?: boolean,
+  fileName?: string,
+  folderPath?: string
+): Promise<{ mimeType: string; fileSize: string; filePath: string } | { mimeType: string; fileSize: string; fileBuffer: Buffer }>
+```
+
+**Parameters:**
+
+- `saveToFile` (`boolean`, optional, default: `false`): Whether to save the media to a file on disk.
+- `fileName` (`string`, optional): The name of the file to save the media as. Required if `saveToFile` is `true`.
+- `folderPath` (`string`, optional): The path to the folder where the media should be saved. Required if `saveToFile` is `true`, otherwise, the default is the `files` folder in the project directory.
+
+**Returns:**
+
+A `Promise` that resolves with an object containing the following properties:
+
+If `saveToFile` is `true`:
+- `mimeType` (`string`): The MIME type of the media.
+- `fileSize` (`string`): The size of the media file.
+- `filePath` (`string`): The path to the saved media file.
+
+If `saveToFile` is `false`:
+- `mimeType` (`string`): The MIME type of the media.
+- `fileSize` (`string`): The size of the media file.
+- `fileBuffer` (`Buffer`): A buffer containing the media data.
+
+**Examples:**
+
+Saving the media to a file:
+
+```js
+const mediaInfo = await message.downloadMedia(true, 'image.jpg', '/path/to/folder');
+console.log(mediaInfo.filePath); // Output: /path/to/folder/image.jpg
+```
+
+Getting the media as a buffer:
+
+```js
+const mediaInfo = await message.downloadMedia();
+const fileBuffer = mediaInfo.fileBuffer;
+// Do something with the file buffer
+```
+
+#### `markMessageAsRead()`
+
+Marks the message as read. This method does not take any parameters.
+
+**Returns:**
+
+A `Promise` that resolves with a `boolean` indicating whether the message was successfully marked as read.
+
+**Example:**
+
+```js
+const markAsReadSuccess = await message.markMessageAsRead("wamid.XXX="); // boolean
+```
+
+For more information on the available methods for handling incoming messages, see the [Event Handlers documentation](/docs/listeners#common-methods).

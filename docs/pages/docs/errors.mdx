@@ -1,0 +1,85 @@
+## WhatsApp Cloud API Errors
+
+The WhatsApp Cloud API is built on the Graph API, and it uses a consistent error response format to communicate errors that may occur during API requests. When an error occurs, the API will return an error response with relevant information about the error, including an error code, error type, and error details.
+
+### Error Response Structure
+
+The error response from the WhatsApp Cloud API follows this structure:
+
+```json
+{
+  "error": {
+    "message": "<MESSAGE>",
+    "type": "<TYPE>",
+    "code": <CODE>,
+    "error_data": {
+        "messaging_product": "whatsapp",
+        "details": "<DETAILS>"
+    },
+    "error_subcode": <ERROR_SUBCODE>,
+    "fbtrace_id": "<FBTRACE_ID>"
+  }
+}
+```
+
+- `message`: A combination of the error code and its title (e.g., `"(#130429) Rate limit hit"`).
+- `type`: The type of the error (e.g., `"OAuthException"`, `"ParameterException"`, etc.).
+- `code`: The error code, which is the primary identifier for the error.
+- `error_data`:
+  - `messaging_product`: Always `"whatsapp"` for WhatsApp Cloud API errors.
+  - `details`: A detailed description of the error and possible solutions.
+- `error_subcode` (deprecated): A subcode associated with the error, which is no longer recommended for error handling.
+- `fbtrace_id`: A trace ID that can be included when contacting support for assistance with the error.
+
+### Error Types
+
+The wh-wrapper library defines several error types based on the nature of the error. These error types are represented as classes that extend the base `WhatsAppError` class:
+
+1. **AuthError**: Errors related to authentication and authorization issues.
+2. **ThrottlingError**: Errors related to rate limiting and throttling.
+3. **IntegrityError**: Errors related to policy violations or account restrictions.
+4. **ParameterError**: Errors caused by invalid or missing parameters in the request.
+5. **MessageError**: Errors related to sending messages or handling message content.
+6. **TemplateError**: Errors related to message templates.
+7. **RegistrationError**: Errors related to phone number registration or deregistration.
+8. **BillingError**: Errors related to billing and payment issues.
+9. **UnknownError**: Errors that do not fall into any of the above categories or have an unknown cause.
+
+Each error type has its own class that extends the base `WhatsAppError` class and provides a custom `toString()` method for formatted error output.
+
+### Error Handling
+
+When an error occurs during an API request, the library will throw an instance of the appropriate error class based on the error code and type. For example, if the error is related to rate limiting, a `ThrottlingError` instance will be thrown.
+
+You can handle these errors in your code by catching the appropriate error class or the base `WhatsAppError` class. The error instance will contain the relevant error information, such as the error code, message, trace ID, and details.
+
+Here's an example of how you might handle errors in your code:
+
+```javascript
+import { WhatsAppError, ThrottlingError, MessageError } from 'wh-wrapper';
+
+try {
+  const messageId = await wh.sendMessage(recipientPhoneNumber, 'Hello, World!');
+  console.log(`Message sent: ${messageId}`);
+} catch (error) {
+  if (error instanceof ThrottlingError) {
+    console.error(`Throttling Error: ${error}`);
+    // Handle throttling errors (e.g., retry after a delay)
+  } else if (error instanceof MessageError) {
+    console.error(`Message Error: ${error}`);
+    // Handle message errors (e.g., check recipient status, template issues)
+  } else if (error instanceof WhatsAppError) {
+    console.error(`WhatsApp Error: ${error}`);
+    // Handle other WhatsApp errors
+  } else {
+    console.error(`Unexpected Error: ${error}`);
+    // Handle unexpected errors
+  }
+}
+```
+
+In this example, specific error types are caught and handled accordingly, while the base `WhatsAppError` class catches any other WhatsApp-related errors. You can implement your error handling logic based on the error type, code, and details provided in the error instance.
+
+By following this error handling approach, you can build a robust and maintainable error handling system for your WhatsApp Cloud API integration, making it easier to debug and resolve issues as they arise.
+
+**This documentation is not yet ready and will be uploaded in stages**

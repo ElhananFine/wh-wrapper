@@ -1,0 +1,34 @@
+## Callback Event
+
+The `Callback` event is emitted when a user interacts with an interactive message, such as pressing a button or selecting an option from a list.
+
+**Listening for the `Callback` event:**
+
+```javascript
+wh.on("callbacks", async (callback: Callback) => {
+  console.log(callback);
+});
+```
+
+**The `Callback` class:**
+
+- `id` (string): The ID of the incoming message. Useful for marking the message as read or for creating a thread.
+- `metadata` (object):
+  - `displayPhoneNumber` (string): The phone number to which the message was sent.
+  - `phoneNumberID` (string): The ID of the phone number to which the message was sent.
+- `fromUser` (object):
+  - `whid` (string): The WhatsApp ID of the user (the phone number with the country code).
+  - `name` (string): The name of the sender.
+- `timestamp` (string): The time of the update.
+- `type` (string): Always `interactive`.
+- `clickType` (string): Either `listReply` or `buttonReply`, depending on whether the user selected an option from a list or pressed a button.
+- `data` (object): The information entered by the user, with the following properties:
+  - `title` (string): The title defined when sending the button or list.
+  - `id` (string): The ID defined when sending the list.
+  - `description` (string, optional): If the update type is `listReply`, this will be present only if a description was provided when sending the list.
+
+**Methods:**
+
+- `markMessageAsRead()`: Marks the message as read and returns a boolean indicating whether the operation was successful. This method does not take any parameters.
+
+For more information on the available methods for handling callbacks, see the [Event Handlers documentation](/docs/listeners#common-methods).

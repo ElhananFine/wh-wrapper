@@ -1,0 +1,17 @@
+{
+    "index": "Getting Started",
+    "client": "Client",
+    "listeners": "Listeners",
+    "messages": "Messages",
+    "updates": "Updates",
+    "callbacks": "Callbacks",
+    "chat-opened": "Chat Opened",
+    "types": "Types",
+    "errors": "Errors",
+
+    "change-log": {
+        "title": "Change Log",
+        "href": "",
+        "newWindow": true
+    }
+}

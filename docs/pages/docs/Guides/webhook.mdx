@@ -1,0 +1,53 @@
+import { Callout, Steps} from 'nextra/components'
+import Image from 'next/image'
+
+# Setting up the WhatsApp Webhook
+
+**Prerequisites**: A Meta Developer account and a WhatsApp Business account with the WhatsApp  product enabled. 
+<Callout type="info" emoji="ℹ️">
+If you don't have these set up yet, please refer to our guide on [getting started with the WhatsApp Cloud API](/docs/Guides/getting-started).
+</Callout>
+
+To receive incoming messages and updates from WhatsApp, it is mandatory to set up webhooks.
+
+Webhooks allow you to receive real-time HTTP requests for updates by configuring a public URL that routes incoming messages to the port your library listens on. The library will handle the update itself. It is required to use an HTTPS URL. If you have a domain pointing to the server running the library, that's great. Otherwise, you can use Ngrok or Glitch [Below link to guide with Glitch]().
+
+Once you have a ready URL, you need to register it in the WhatsApp dashboard. This can be done manually or through the library, and we support both methods.
+
+## Manual Webhook Registration
+
+<Steps>
+### 1. Login and navigation
+[Log in to the WhatsApp dashboard](https://developers.facebook.com/apps) and navigate to your app -> Webhooks tab or the WhatsApp product (and select tab Configuration from the available).
+
+![image1](/1.png)
+
+### 2. Add the Webhook
+Fill in the webhook details, including the URL and verify token (**click edit on the Webhook tab**).
+![image2](/2.png)
+
+### 3. Subscribe to Webhook fields
+Subscribe to the desired Webhook fields (**click edit on the Webhook fields tab**). Currently, the library parses only two webhooks: `messages` and `message_template_status_update` 
+![image3](/3.png)
+</Steps>
+
+The Verify Token is a random string that WhatsApp will use to authenticate the webhook URL, and you must provide it to the library later.
+
+## Automatic Webhook Registration
+
+Alternatively, you can automatically register the webhook [when initializing the client](/docs/client) with the phone number, token, and verify token. Pass a fourth parameter as an object containing the `appID`, `appSecret`, and `callbackUrl`.
+
+```javascript
+const client = new Client(phoneID, token, verifyToken, {
+  appID: 'YOUR_APP_ID',
+  appSecret: 'YOUR_APP_SECRET',
+  callbackUrl: 'YOUR_CALLBACK_URL'
+});
+```
+
+The `appID` and `appSecret` can be found in the App Basic Settings on the Facebook dashboard.
+![image4](/4.png)
+
+The library will register the provided `callbackUrl` as the webhook URL. If `webHookEndpoint` is provided, it will append `/webHookEndpoint` to the URL. If WhatsApp fails to authenticate the webhook, an error will be thrown.
+
+And that's it, after registering Webhook you can start receiving incoming messages and updates with the library!

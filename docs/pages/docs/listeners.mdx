@@ -1,0 +1,79 @@
+## Message Handlers
+
+The `Client` class provides three event handlers to handle different types of incoming events from the WhatsApp Cloud API. These event handlers can be registered using the `on` method.
+
+#### `messages`
+
+The `messages` event handler is called when a new message is received from a user. This includes text messages, media messages, orders, locations, and other types of messages.
+
+**Usage:**
+
+```javascript
+wh.on('messages', (message) => {
+  console.log(`Received message from ${message.sender}: ${message.text}`);
+});
+```
+
+[Learn more about the `messages` event handler](link-to-detailed-documentation)
+
+#### `callbacks`
+
+The `callbacks` event handler is called when a user interacts with an interactive message, such as pressing a button or selecting an option from a section list.
+
+**Usage:**
+
+```javascript
+wh.on('callbacks', (callback) => {
+  console.log(`Received callback from ${callback.sender}: ${callback.data.id}`);
+});
+```
+
+[Learn more about the `callbacks` event handler](link-to-detailed-documentation)
+
+#### `statuses`
+
+The `statuses` event handler is called when a message status update is received, such as when a message is delivered, seen, or deleted.
+
+**Usage:**
+
+```javascript
+wh.on('statuses', (status) => {
+  console.log(`Message ${status.id} is now ${status.status}`);
+});
+```
+
+[Learn more about the `statuses` event handler](/docs/messages)
+
+#### `ChatOpened`
+
+The `ChatOpened` event handler is called when a user opens a new chat with the bot. This includes cases where the user deletes the previous chat and opens a new one.
+
+**Usage:**
+
+```javascript
+wh.on('ChatOpened', async (chat) => {
+  console.log(chat);
+});
+```
+
+[Learn more about the `RequestWelcome` type and its properties](/docs/types#requestwelcome)
+
+#### `Template Status`
+
+The `Template Status` event handler is not yet documented, and it does not have the common methods available in the other event handlers.
+
+#### Common Methods
+
+All event handlers (`messages`, `callbacks`, and `statuses`) have the following common methods available:
+
+The documentation for each method can be found in the [Client documentation](/docs/client), as the methods available on the event handlers are identical to the corresponding methods on the `Client` class, with the exception that the `to` parameter does not need to be provided, as it is derived from `this.sender`.
+- `replyText(text, options)`: Replies with a text message. [Learn more](/docs/client#sendmessageto-text-options)
+- `replyImage(image, options)`: Replies with an image message. [Learn more](/docs/client#sendimageto-image-options)
+- `replyVideo(video, options)`: Replies with a video message. [Learn more](/docs/client#sendvideoto-video-options)
+- `replyAudio(audio, options)`: Replies with an audio message. [Learn more](/docs/client#sendaudioto-audio-options)
+- `replyDocument(document, options)`: Replies with a document message. [Learn more](/docs/client#senddocumentto-document-options)
+- `replyLocation(location, options)`: Replies with a location message. [Learn more](/docs/client#sendlocationto-location-options)
+- `replyContact(name, phone, options)`: Replies with a contact message. [Learn more](/docs/client#sendcontactto-name-phone-options)
+- `replySticker(sticker, options)`: Replies with a sticker message. [Learn more](/docs/client#sendstickerto-sticker-options)
+- `react(emoji)`: Reacts to a message with an emoji. Takes one parameter: the desired emoji (string).
+- `unreact()`: Removes the reaction (emoji) from the message. Does not require any parameters.

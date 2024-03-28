@@ -1,0 +1,21 @@
+## Message Status Update Event
+
+When a message status update is received, the `statuses` event is emitted with an instance of the `Update` class containing relevant information about the update.
+
+**The `Update` class:**
+
+- `id` (string): The ID of the message for which the status update occurred (e.g., the message ID of the message that was read/delivered, etc.).
+- `metadata` (object):
+  - `displayPhoneNumber` (string): The phone number to which the message was sent.
+  - `phoneNumberID` (string): The ID of the phone number to which the message was sent.
+- `status` (string): The status of the message, which can be one of the following: `SENT`, `DELIVERED`, `READ`, `FAILED`.
+- `timestamp` (string): The time of the update.
+- `fromUser` (object): An object with `whid` - The WhatsApp ID of the user (the phone number with the country code).
+- `conversation` (object, optional): The conversation to which the given status notification belongs. Present only if the status is `SENT` or `DELIVERED`.
+  - `conversationID` (string): The ID of the conversation.
+  - `expirationConversation` (string, optional): The expiration date of the conversation, present only if the status is `DELIVERED`.
+  - `conversationCategory` (string): The category of the conversation, which can be one of the following: `AUTHENTICATION`, `MARKETING`, `UTILITY`, `SERVICE`, `REFERRAL_CONVERSION`, `UNKNOWN`.
+  - `isBillable` (boolean): Whether the conversation is billable.
+  - `pricingModel` (string): The pricing model, which will always be `CBP`.
+
+For more information on the available methods for handling status updates, see the [Event Handlers documentation](/docs/listeners#common-methods).
