@@ -34,6 +34,7 @@ import {
     UnknownError,
 } from "../errors/error-classes";
 import {
+    ClassMessageType,
     CreateTempleteResponse,
     GetPhoneNumberByID,
     isSuccessResponse,
@@ -41,12 +42,14 @@ import {
     WhatsAppProfileData,
 } from "../types/internal-types";
 import { ClientOptions } from "../types/shared";
+import FlowCompletion from "../handlers/flow-handler";
 
 type MessageHandlers = {
     messages: (message: Message) => void;
     statuses: (statuses: Update) => void;
     callbacks: (callbacks: Callback) => void;
-    ChatOpened: (chat: RequestWelcome) => void;
+    chatOpened: (chat: RequestWelcome) => void;
+    flowCompletion: (flow: FlowCompletion) => void;
 };
 
 /**
@@ -85,7 +88,7 @@ export default class Client extends EventEmitter {
         private options: Partial<ClientOptions> = {}
     ) {
         super();
-        // console.clear();
+        console.clear();
 
         if (!this.phoneID || !this.token) throw new Error("Missing Parameters, phoneID and token are required");
 
@@ -125,7 +128,7 @@ export default class Client extends EventEmitter {
             },
         });
 
-        return await this.makeRequest<{ success: boolean }>({
+        const response = await this.makeRequest<{ success: boolean }>({
             method: "POST",
             url: `/${appID}/subscriptions`,
             params: {
@@ -136,7 +139,12 @@ export default class Client extends EventEmitter {
                 fields: ["message_template_status_update", "messages"].join(","),
             },
         });
+
+        if (response.success) console.info("CallBack URL successfully registered!");
+
+        return response;
     }
+
     async _initialize(): Promise<void> {
         if (
             !this.options.server ||
@@ -167,8 +175,11 @@ export default class Client extends EventEmitter {
 
                 if (field === "messages") {
                     if ("messages" in value) {
-                        if (value.messages[0].type === "interactive") this.emit("callbacks", new Callback(this, value));
-                        else if (
+                        if (value.messages[0].type === "interactive") {
+                            if (value.messagesmessages[0].interactive.type === "nfm_reply")
+                                this.emit("flowCompletion", new FlowCompletion(this, value));
+                            else this.emit("callbacks", new Callback(this, value));
+                        } else if (
                             [
                                 "text",
                                 "image",
@@ -183,7 +194,7 @@ export default class Client extends EventEmitter {
                         ) {
                             this.emit("messages", new Message(this, value));
                         } else if (value.messages![0].type === "request_welcome") {
-                            this.emit("ChatOpened", new RequestWelcome(this, value));
+                            this.emit("chatOpened", new RequestWelcome(this, value));
                         } else return;
                     } else if ("statuses" in value) {
                         this.emit("statuses", new Update(this, value));

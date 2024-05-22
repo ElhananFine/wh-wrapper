@@ -46,7 +46,7 @@ type Unsupported = {
         };
     }[];
 };
-type MesaageTypes =
+export type MesaageTypes =
     | Text
     | Image
     | Video

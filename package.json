@@ -1,16 +1,22 @@
 {
     "name": "wh-wrapper",
-    "version": "0.0.18",
+    "version": "0.0.19",
     "description": "JavaScript wrapper for the WhatsApp Cloud API",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
     "scripts": {
-        "build": "rm -rf lib/ && prettier --write src/ && tsc",
-        "test": "tsc test/*.ts --target es2019 --module commonjs --esModuleInterop --removeComments --strict --skipLibCheck && ./node_modules/mocha/bin/mocha.js"
+        "build": "rimraf ./lib/ && prettier --write src/ && tsc",
+        "publish": "npm publish",
+        "watch": "",
+        "test": "tsc test/*.ts --target es2019 --module commonjs --esModuleInterop --removeComments --strict --skipLibCheck && ./node_modules/mocha/bin/mocha.js",
+        "clean-build": "rimraf ./lib/ && mkdir lib"
     },
     "repository": {
         "type": "git",
         "url": "https://github.com/ElhananFine/wh-wrapper.git"
+    },
+    "bugs": {
+        "url": "https://github.com/ElhananFine/wh-wrapper/issues"
     },
     "keywords": [
         "whatsapp",
@@ -36,8 +42,10 @@
         "chai": "^4.4.1",
         "dotenv": "^16.4.5",
         "mocha": "^10.4.0",
+        "rimraf": "^5.0.5",
         "sinon": "^17.0.1",
         "ts-node": "^10.9.2",
+        "ts-toolbelt": "^9.6.0",
         "typescript": "^5.3.3"
     },
     "dependencies": {

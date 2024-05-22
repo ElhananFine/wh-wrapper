@@ -1,4 +1,8 @@
+import Client from "../client/client";
 import { WhatsAppProfileVertical } from "./shared";
+import { C } from "ts-toolbelt";
+import { MesaageTypes, MessageValueType } from "./whatsapp-types";
+import { Context } from "./exports-types";
 
 export type SendMessageResponse = {
     messaging_product: "whatsapp";
@@ -17,6 +21,17 @@ export type SendMessageResponse = {
 
 export type isSuccessResponse = { success: boolean };
 
+export type ClassMessageType = C.Class<
+    [Client, MessageValueType<"messages">],
+    MesaageTypes & {
+        timestamp: Date;
+        forwarded: boolean;
+        forwardedManyTimes?: boolean;
+        isReply: boolean;
+        hasMedia: boolean;
+        context?: Context;
+    }
+>;
 export interface GetPhoneNumberByID {
     verified_name: string;
     display_phone_number: string;

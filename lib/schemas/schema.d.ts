@@ -243,6 +243,8 @@ export declare const sendMediaInteractiveSchema: z.ZodOptional<z.ZodObject<{
     capiton: z.ZodOptional<z.ZodString>;
     filename: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
+    messageID?: string | undefined;
+    footer?: string | undefined;
     buttons?: {
         title: string;
         callbackData: string;
@@ -253,11 +255,11 @@ export declare const sendMediaInteractiveSchema: z.ZodOptional<z.ZodObject<{
         title: string;
         url: string;
     } | undefined;
-    footer?: string | undefined;
-    messageID?: string | undefined;
     capiton?: string | undefined;
     filename?: string | undefined;
 }, {
+    messageID?: string | undefined;
+    footer?: string | undefined;
     buttons?: {
         title: string;
         callbackData: string;
@@ -268,8 +270,6 @@ export declare const sendMediaInteractiveSchema: z.ZodOptional<z.ZodObject<{
         title: string;
         url: string;
     } | undefined;
-    footer?: string | undefined;
-    messageID?: string | undefined;
     capiton?: string | undefined;
     filename?: string | undefined;
 }>>;
@@ -413,8 +413,8 @@ export declare const sendMessageSchema: z.ZodObject<{
         } | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
-    to: string;
     text: string;
+    to: string;
     options?: {
         previewUrl?: boolean | undefined;
         messageID?: string | undefined;
@@ -442,8 +442,8 @@ export declare const sendMessageSchema: z.ZodObject<{
         } | undefined;
     } | undefined;
 }, {
-    to: string;
     text: string;
+    to: string;
     options?: {
         previewUrl?: boolean | undefined;
         messageID?: string | undefined;
@@ -481,17 +481,17 @@ export declare const UpdateBusinessProfileSchema: z.ZodObject<{
     websites: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
     industry: WhatsAppProfileVertical;
+    description?: string | undefined;
     about?: string | undefined;
     address?: string | undefined;
-    description?: string | undefined;
     email?: string | undefined;
     profilePictureHandle?: string | undefined;
     websites?: string[] | undefined;
 }, {
     industry: WhatsAppProfileVertical;
+    description?: string | undefined;
     about?: string | undefined;
     address?: string | undefined;
-    description?: string | undefined;
     email?: string | undefined;
     profilePictureHandle?: string | undefined;
     websites?: string[] | undefined;
@@ -505,11 +505,11 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: z.ZodLiteral<"TEXT">;
         text: z.ZodEffects<z.ZodString, string, string>;
     }, "strip", z.ZodTypeAny, {
-        type: "TEXT";
         text: string;
+        type: "TEXT";
     }, {
-        type: "TEXT";
         text: string;
+        type: "TEXT";
     }>, z.ZodObject<{
         type: z.ZodEnum<["IMAGE", "DOCUMENT", "VIDEO"]>;
         media: z.ZodString;
@@ -565,11 +565,11 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: z.ZodLiteral<"QuickReplyButton">;
         text: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     }, {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     }>>, z.ZodOptional<z.ZodObject<{
         type: z.ZodLiteral<"CopyCodeButton">;
         example: z.ZodString;
@@ -643,11 +643,11 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: z.ZodLiteral<"QuickReplyButton">;
         text: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     }, {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     }>>, z.ZodOptional<z.ZodObject<{
         type: z.ZodLiteral<"CopyCodeButton">;
         example: z.ZodString;
@@ -698,17 +698,13 @@ export declare const CreateTempleteSchema: z.ZodObject<{
     name: string;
     category: "AUTHENTICATION" | "MARKETING" | "UTILITY";
     language: "AFRIKAANS" | "ALBANIAN" | "ARABIC" | "AZERBAIJANI" | "BENGALI" | "BULGARIAN" | "CATALAN" | "CHINESE_CHN" | "CHINESE_HKG" | "CHINESE_TAI" | "CROATIAN" | "CZECH" | "DANISH" | "DUTCH" | "ENGLISH" | "ENGLISH_UK" | "ENGLISH_US" | "ESTONIAN" | "FILIPINO" | "FINNISH" | "FRENCH" | "GEORGIAN" | "GERMAN" | "GREEK" | "GUJARATI" | "HAUSA" | "HEBREW" | "HINDI" | "HUNGARIAN" | "INDONESIAN" | "IRISH" | "ITALIAN" | "JAPANESE" | "KANNADA" | "KAZAKH" | "KINYARWANDA" | "KOREAN" | "KYRGYZ_KYRGYZSTAN" | "LAO" | "LATVIAN" | "LITHUANIAN" | "MACEDONIAN" | "MALAY" | "MALAYALAM" | "MARATHI" | "NORWEGIAN" | "PERSIAN" | "POLISH" | "PORTUGUESE_BR" | "PORTUGUESE_POR" | "PUNJABI" | "ROMANIAN" | "RUSSIAN" | "SERBIAN" | "SLOVAK" | "SLOVENIAN" | "SPANISH" | "SPANISH_ARG" | "SPANISH_SPA" | "SPANISH_MEX" | "SWAHILI" | "SWEDISH" | "TAMIL" | "TELUGU" | "THAI" | "TURKISH" | "UKRAINIAN" | "URDU" | "UZBEK" | "VIETNAMESE" | "ZULU";
-    body: (string | {
+    body: string | {
         codeExpirationMinutes: number;
         addSecurityRecommendation: boolean;
-    }) & (string | {
-        codeExpirationMinutes: number;
-        addSecurityRecommendation: boolean;
-    } | undefined);
-    allowCategoryChange?: boolean | undefined;
+    };
     header?: {
-        type: "TEXT";
         text: string;
+        type: "TEXT";
     } | {
         type: "IMAGE" | "DOCUMENT" | "VIDEO";
         media: string;
@@ -725,8 +721,8 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -751,8 +747,8 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -769,21 +765,18 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         signatureHash?: string | undefined;
         zeroTapTermsAccepted?: boolean | undefined;
     } | undefined)[] | undefined;
+    allowCategoryChange?: boolean | undefined;
 }, {
     name: string;
     category: "AUTHENTICATION" | "MARKETING" | "UTILITY";
     language: "AFRIKAANS" | "ALBANIAN" | "ARABIC" | "AZERBAIJANI" | "BENGALI" | "BULGARIAN" | "CATALAN" | "CHINESE_CHN" | "CHINESE_HKG" | "CHINESE_TAI" | "CROATIAN" | "CZECH" | "DANISH" | "DUTCH" | "ENGLISH" | "ENGLISH_UK" | "ENGLISH_US" | "ESTONIAN" | "FILIPINO" | "FINNISH" | "FRENCH" | "GEORGIAN" | "GERMAN" | "GREEK" | "GUJARATI" | "HAUSA" | "HEBREW" | "HINDI" | "HUNGARIAN" | "INDONESIAN" | "IRISH" | "ITALIAN" | "JAPANESE" | "KANNADA" | "KAZAKH" | "KINYARWANDA" | "KOREAN" | "KYRGYZ_KYRGYZSTAN" | "LAO" | "LATVIAN" | "LITHUANIAN" | "MACEDONIAN" | "MALAY" | "MALAYALAM" | "MARATHI" | "NORWEGIAN" | "PERSIAN" | "POLISH" | "PORTUGUESE_BR" | "PORTUGUESE_POR" | "PUNJABI" | "ROMANIAN" | "RUSSIAN" | "SERBIAN" | "SLOVAK" | "SLOVENIAN" | "SPANISH" | "SPANISH_ARG" | "SPANISH_SPA" | "SPANISH_MEX" | "SWAHILI" | "SWEDISH" | "TAMIL" | "TELUGU" | "THAI" | "TURKISH" | "UKRAINIAN" | "URDU" | "UZBEK" | "VIETNAMESE" | "ZULU";
-    body: (string | {
+    body: string | {
         codeExpirationMinutes: number;
         addSecurityRecommendation?: boolean | undefined;
-    }) & (string | {
-        codeExpirationMinutes: number;
-        addSecurityRecommendation?: boolean | undefined;
-    } | undefined);
-    allowCategoryChange?: boolean | undefined;
+    };
     header?: {
-        type: "TEXT";
         text: string;
+        type: "TEXT";
     } | {
         type: "IMAGE" | "DOCUMENT" | "VIDEO";
         media: string;
@@ -800,8 +793,8 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -826,8 +819,8 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -844,6 +837,7 @@ export declare const CreateTempleteSchema: z.ZodObject<{
         signatureHash?: string | undefined;
         zeroTapTermsAccepted?: boolean | undefined;
     } | undefined)[] | undefined;
+    allowCategoryChange?: boolean | undefined;
 }>;
 export declare const nameSchema: z.ZodUnion<[z.ZodString, z.ZodEffects<z.ZodObject<{
     formatted_name: z.ZodString;
@@ -886,24 +880,24 @@ export declare const phoneSchema: z.ZodUnion<[z.ZodString, z.ZodObject<{
     type: z.ZodOptional<z.ZodEnum<["IPHONE", "CELL", "MAIN", "HOME", "WORK"]>>;
     waID: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    phone?: string | undefined;
     type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
+    phone?: string | undefined;
     waID?: string | undefined;
 }, {
-    phone?: string | undefined;
     type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
+    phone?: string | undefined;
     waID?: string | undefined;
 }>, z.ZodArray<z.ZodObject<{
     phone: z.ZodOptional<z.ZodString>;
     type: z.ZodOptional<z.ZodEnum<["IPHONE", "CELL", "MAIN", "HOME", "WORK"]>>;
     waID: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    phone?: string | undefined;
     type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
+    phone?: string | undefined;
     waID?: string | undefined;
 }, {
-    phone?: string | undefined;
     type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
+    phone?: string | undefined;
     waID?: string | undefined;
 }>, "many">]>;
 export declare const SendContacOptionSchema: z.ZodObject<{
@@ -919,19 +913,19 @@ export declare const SendContacOptionSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         street: string;
         city: string;
+        type?: "HOME" | "WORK" | undefined;
         state?: string | undefined;
         zip?: string | undefined;
         country?: string | undefined;
         country_code?: string | undefined;
-        type?: "HOME" | "WORK" | undefined;
     }, {
         street: string;
         city: string;
+        type?: "HOME" | "WORK" | undefined;
         state?: string | undefined;
         zip?: string | undefined;
         country?: string | undefined;
         country_code?: string | undefined;
-        type?: "HOME" | "WORK" | undefined;
     }>, z.ZodArray<z.ZodObject<{
         street: z.ZodString;
         city: z.ZodString;
@@ -943,19 +937,19 @@ export declare const SendContacOptionSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         street: string;
         city: string;
+        type?: "HOME" | "WORK" | undefined;
         state?: string | undefined;
         zip?: string | undefined;
         country?: string | undefined;
         country_code?: string | undefined;
-        type?: "HOME" | "WORK" | undefined;
     }, {
         street: string;
         city: string;
+        type?: "HOME" | "WORK" | undefined;
         state?: string | undefined;
         zip?: string | undefined;
         country?: string | undefined;
         country_code?: string | undefined;
-        type?: "HOME" | "WORK" | undefined;
     }>, "many">]>>;
     emails: z.ZodOptional<z.ZodUnion<[z.ZodObject<{
         email: z.ZodString;
@@ -1001,12 +995,12 @@ export declare const SendContacOptionSchema: z.ZodObject<{
         title: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
         company: string;
-        department?: string | undefined;
         title?: string | undefined;
+        department?: string | undefined;
     }, {
         company: string;
-        department?: string | undefined;
         title?: string | undefined;
+        department?: string | undefined;
     }>>;
     birthday: z.ZodOptional<z.ZodEffects<z.ZodString, string, string>>;
 }, "strip", z.ZodTypeAny, {
@@ -1014,19 +1008,19 @@ export declare const SendContacOptionSchema: z.ZodObject<{
     addresses?: {
         street: string;
         city: string;
+        type?: "HOME" | "WORK" | undefined;
         state?: string | undefined;
         zip?: string | undefined;
         country?: string | undefined;
         country_code?: string | undefined;
-        type?: "HOME" | "WORK" | undefined;
     } | {
         street: string;
         city: string;
+        type?: "HOME" | "WORK" | undefined;
         state?: string | undefined;
         zip?: string | undefined;
         country?: string | undefined;
         country_code?: string | undefined;
-        type?: "HOME" | "WORK" | undefined;
     }[] | undefined;
     emails?: {
         email: string;
@@ -1044,8 +1038,8 @@ export declare const SendContacOptionSchema: z.ZodObject<{
     }[] | undefined;
     Org?: {
         company: string;
-        department?: string | undefined;
         title?: string | undefined;
+        department?: string | undefined;
     } | undefined;
     birthday?: string | undefined;
 }, {
@@ -1053,19 +1047,19 @@ export declare const SendContacOptionSchema: z.ZodObject<{
     addresses?: {
         street: string;
         city: string;
+        type?: "HOME" | "WORK" | undefined;
         state?: string | undefined;
         zip?: string | undefined;
         country?: string | undefined;
         country_code?: string | undefined;
-        type?: "HOME" | "WORK" | undefined;
     } | {
         street: string;
         city: string;
+        type?: "HOME" | "WORK" | undefined;
         state?: string | undefined;
         zip?: string | undefined;
         country?: string | undefined;
         country_code?: string | undefined;
-        type?: "HOME" | "WORK" | undefined;
     }[] | undefined;
     emails?: {
         email: string;
@@ -1083,8 +1077,8 @@ export declare const SendContacOptionSchema: z.ZodObject<{
     }[] | undefined;
     Org?: {
         company: string;
-        department?: string | undefined;
         title?: string | undefined;
+        department?: string | undefined;
     } | undefined;
     birthday?: string | undefined;
 }>;
@@ -1131,24 +1125,24 @@ export declare const SendContacSchema: z.ZodObject<{
         type: z.ZodOptional<z.ZodEnum<["IPHONE", "CELL", "MAIN", "HOME", "WORK"]>>;
         waID: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        phone?: string | undefined;
         type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
+        phone?: string | undefined;
         waID?: string | undefined;
     }, {
-        phone?: string | undefined;
         type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
+        phone?: string | undefined;
         waID?: string | undefined;
     }>, z.ZodArray<z.ZodObject<{
         phone: z.ZodOptional<z.ZodString>;
         type: z.ZodOptional<z.ZodEnum<["IPHONE", "CELL", "MAIN", "HOME", "WORK"]>>;
         waID: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        phone?: string | undefined;
         type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
+        phone?: string | undefined;
         waID?: string | undefined;
     }, {
-        phone?: string | undefined;
         type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
+        phone?: string | undefined;
         waID?: string | undefined;
     }>, "many">]>;
     options: z.ZodObject<{
@@ -1164,19 +1158,19 @@ export declare const SendContacSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             street: string;
             city: string;
+            type?: "HOME" | "WORK" | undefined;
             state?: string | undefined;
             zip?: string | undefined;
             country?: string | undefined;
             country_code?: string | undefined;
-            type?: "HOME" | "WORK" | undefined;
         }, {
             street: string;
             city: string;
+            type?: "HOME" | "WORK" | undefined;
             state?: string | undefined;
             zip?: string | undefined;
             country?: string | undefined;
             country_code?: string | undefined;
-            type?: "HOME" | "WORK" | undefined;
         }>, z.ZodArray<z.ZodObject<{
             street: z.ZodString;
             city: z.ZodString;
@@ -1188,19 +1182,19 @@ export declare const SendContacSchema: z.ZodObject<{
         }, "strip", z.ZodTypeAny, {
             street: string;
             city: string;
+            type?: "HOME" | "WORK" | undefined;
             state?: string | undefined;
             zip?: string | undefined;
             country?: string | undefined;
             country_code?: string | undefined;
-            type?: "HOME" | "WORK" | undefined;
         }, {
             street: string;
             city: string;
+            type?: "HOME" | "WORK" | undefined;
             state?: string | undefined;
             zip?: string | undefined;
             country?: string | undefined;
             country_code?: string | undefined;
-            type?: "HOME" | "WORK" | undefined;
         }>, "many">]>>;
         emails: z.ZodOptional<z.ZodUnion<[z.ZodObject<{
             email: z.ZodString;
@@ -1246,12 +1240,12 @@ export declare const SendContacSchema: z.ZodObject<{
             title: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
             company: string;
-            department?: string | undefined;
             title?: string | undefined;
+            department?: string | undefined;
         }, {
             company: string;
-            department?: string | undefined;
             title?: string | undefined;
+            department?: string | undefined;
         }>>;
         birthday: z.ZodOptional<z.ZodEffects<z.ZodString, string, string>>;
     }, "strip", z.ZodTypeAny, {
@@ -1259,19 +1253,19 @@ export declare const SendContacSchema: z.ZodObject<{
         addresses?: {
             street: string;
             city: string;
+            type?: "HOME" | "WORK" | undefined;
             state?: string | undefined;
             zip?: string | undefined;
             country?: string | undefined;
             country_code?: string | undefined;
-            type?: "HOME" | "WORK" | undefined;
         } | {
             street: string;
             city: string;
+            type?: "HOME" | "WORK" | undefined;
             state?: string | undefined;
             zip?: string | undefined;
             country?: string | undefined;
             country_code?: string | undefined;
-            type?: "HOME" | "WORK" | undefined;
         }[] | undefined;
         emails?: {
             email: string;
@@ -1289,8 +1283,8 @@ export declare const SendContacSchema: z.ZodObject<{
         }[] | undefined;
         Org?: {
             company: string;
-            department?: string | undefined;
             title?: string | undefined;
+            department?: string | undefined;
         } | undefined;
         birthday?: string | undefined;
     }, {
@@ -1298,19 +1292,19 @@ export declare const SendContacSchema: z.ZodObject<{
         addresses?: {
             street: string;
             city: string;
+            type?: "HOME" | "WORK" | undefined;
             state?: string | undefined;
             zip?: string | undefined;
             country?: string | undefined;
             country_code?: string | undefined;
-            type?: "HOME" | "WORK" | undefined;
         } | {
             street: string;
             city: string;
+            type?: "HOME" | "WORK" | undefined;
             state?: string | undefined;
             zip?: string | undefined;
             country?: string | undefined;
             country_code?: string | undefined;
-            type?: "HOME" | "WORK" | undefined;
         }[] | undefined;
         emails?: {
             email: string;
@@ -1328,8 +1322,8 @@ export declare const SendContacSchema: z.ZodObject<{
         }[] | undefined;
         Org?: {
             company: string;
-            department?: string | undefined;
             title?: string | undefined;
+            department?: string | undefined;
         } | undefined;
         birthday?: string | undefined;
     }>;
@@ -1339,19 +1333,19 @@ export declare const SendContacSchema: z.ZodObject<{
         addresses?: {
             street: string;
             city: string;
+            type?: "HOME" | "WORK" | undefined;
             state?: string | undefined;
             zip?: string | undefined;
             country?: string | undefined;
             country_code?: string | undefined;
-            type?: "HOME" | "WORK" | undefined;
         } | {
             street: string;
             city: string;
+            type?: "HOME" | "WORK" | undefined;
             state?: string | undefined;
             zip?: string | undefined;
             country?: string | undefined;
             country_code?: string | undefined;
-            type?: "HOME" | "WORK" | undefined;
         }[] | undefined;
         emails?: {
             email: string;
@@ -1369,63 +1363,48 @@ export declare const SendContacSchema: z.ZodObject<{
         }[] | undefined;
         Org?: {
             company: string;
-            department?: string | undefined;
             title?: string | undefined;
+            department?: string | undefined;
         } | undefined;
         birthday?: string | undefined;
     };
     to: string;
-    name: (string | {
+    name: string | {
         formatted_name: string;
         first_name?: string | undefined;
         last_name?: string | undefined;
         middle_name?: string | undefined;
         suffix?: string | undefined;
         prefix?: string | undefined;
-    }) & (string | {
-        formatted_name: string;
-        first_name?: string | undefined;
-        last_name?: string | undefined;
-        middle_name?: string | undefined;
-        suffix?: string | undefined;
-        prefix?: string | undefined;
-    } | undefined);
-    phones: (string | {
-        phone?: string | undefined;
+    };
+    phones: string | {
         type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
+        phone?: string | undefined;
         waID?: string | undefined;
     } | {
-        phone?: string | undefined;
         type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
-        waID?: string | undefined;
-    }[]) & (string | {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
-    } | {
-        phone?: string | undefined;
-        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
-        waID?: string | undefined;
-    }[] | undefined);
+    }[];
 }, {
     options: {
         messageID?: string | undefined;
         addresses?: {
             street: string;
             city: string;
+            type?: "HOME" | "WORK" | undefined;
             state?: string | undefined;
             zip?: string | undefined;
             country?: string | undefined;
             country_code?: string | undefined;
-            type?: "HOME" | "WORK" | undefined;
         } | {
             street: string;
             city: string;
+            type?: "HOME" | "WORK" | undefined;
             state?: string | undefined;
             zip?: string | undefined;
             country?: string | undefined;
             country_code?: string | undefined;
-            type?: "HOME" | "WORK" | undefined;
         }[] | undefined;
         emails?: {
             email: string;
@@ -1443,44 +1422,29 @@ export declare const SendContacSchema: z.ZodObject<{
         }[] | undefined;
         Org?: {
             company: string;
-            department?: string | undefined;
             title?: string | undefined;
+            department?: string | undefined;
         } | undefined;
         birthday?: string | undefined;
     };
     to: string;
-    name: (string | {
+    name: string | {
         formatted_name: string;
         first_name?: string | undefined;
         last_name?: string | undefined;
         middle_name?: string | undefined;
         suffix?: string | undefined;
         prefix?: string | undefined;
-    }) & (string | {
-        formatted_name: string;
-        first_name?: string | undefined;
-        last_name?: string | undefined;
-        middle_name?: string | undefined;
-        suffix?: string | undefined;
-        prefix?: string | undefined;
-    } | undefined);
-    phones: (string | {
-        phone?: string | undefined;
+    };
+    phones: string | {
         type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
+        phone?: string | undefined;
         waID?: string | undefined;
     } | {
-        phone?: string | undefined;
         type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
-        waID?: string | undefined;
-    }[]) & (string | {
         phone?: string | undefined;
-        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
         waID?: string | undefined;
-    } | {
-        phone?: string | undefined;
-        type?: "HOME" | "WORK" | "CELL" | "IPHONE" | "MAIN" | undefined;
-        waID?: string | undefined;
-    }[] | undefined);
+    }[];
 }>;
 export declare const SendTemplateSchema: z.ZodObject<{
     name: z.ZodString;
@@ -1504,14 +1468,14 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: "LOCATION";
         latitude: string;
         longitude: string;
-        name?: string | undefined;
         address?: string | undefined;
+        name?: string | undefined;
     }, {
         type: "LOCATION";
         latitude: string;
         longitude: string;
-        name?: string | undefined;
         address?: string | undefined;
+        name?: string | undefined;
     }>>]>;
     body: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodUnion<[z.ZodString, z.ZodObject<{
         currency: z.ZodString;
@@ -1560,11 +1524,11 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: z.ZodLiteral<"QuickReplyButton">;
         text: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     }, {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     }>>, z.ZodOptional<z.ZodObject<{
         type: z.ZodLiteral<"CopyCodeButton">;
         example: z.ZodString;
@@ -1638,11 +1602,11 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: z.ZodLiteral<"QuickReplyButton">;
         text: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     }, {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     }>>, z.ZodOptional<z.ZodObject<{
         type: z.ZodLiteral<"CopyCodeButton">;
         example: z.ZodString;
@@ -1692,19 +1656,13 @@ export declare const SendTemplateSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     name: string;
     language: "AFRIKAANS" | "ALBANIAN" | "ARABIC" | "AZERBAIJANI" | "BENGALI" | "BULGARIAN" | "CATALAN" | "CHINESE_CHN" | "CHINESE_HKG" | "CHINESE_TAI" | "CROATIAN" | "CZECH" | "DANISH" | "DUTCH" | "ENGLISH" | "ENGLISH_UK" | "ENGLISH_US" | "ESTONIAN" | "FILIPINO" | "FINNISH" | "FRENCH" | "GEORGIAN" | "GERMAN" | "GREEK" | "GUJARATI" | "HAUSA" | "HEBREW" | "HINDI" | "HUNGARIAN" | "INDONESIAN" | "IRISH" | "ITALIAN" | "JAPANESE" | "KANNADA" | "KAZAKH" | "KINYARWANDA" | "KOREAN" | "KYRGYZ_KYRGYZSTAN" | "LAO" | "LATVIAN" | "LITHUANIAN" | "MACEDONIAN" | "MALAY" | "MALAYALAM" | "MARATHI" | "NORWEGIAN" | "PERSIAN" | "POLISH" | "PORTUGUESE_BR" | "PORTUGUESE_POR" | "PUNJABI" | "ROMANIAN" | "RUSSIAN" | "SERBIAN" | "SLOVAK" | "SLOVENIAN" | "SPANISH" | "SPANISH_ARG" | "SPANISH_SPA" | "SPANISH_MEX" | "SWAHILI" | "SWEDISH" | "TAMIL" | "TELUGU" | "THAI" | "TURKISH" | "UKRAINIAN" | "URDU" | "UZBEK" | "VIETNAMESE" | "ZULU";
-    body: (string | (string | {
+    body: string | (string | {
         code: string;
         currency: string;
         amount: number;
     } | {
         dateTime: string;
-    })[]) & (string | (string | {
-        code: string;
-        currency: string;
-        amount: number;
-    } | {
-        dateTime: string;
-    })[] | undefined);
+    })[];
     header?: string | {
         type: "IMAGE" | "DOCUMENT" | "VIDEO";
         media: string;
@@ -1712,8 +1670,8 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: "LOCATION";
         latitude: string;
         longitude: string;
-        name?: string | undefined;
         address?: string | undefined;
+        name?: string | undefined;
     } | undefined;
     buttons?: {
         title: string;
@@ -1724,8 +1682,8 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -1750,8 +1708,8 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -1771,19 +1729,13 @@ export declare const SendTemplateSchema: z.ZodObject<{
 }, {
     name: string;
     language: "AFRIKAANS" | "ALBANIAN" | "ARABIC" | "AZERBAIJANI" | "BENGALI" | "BULGARIAN" | "CATALAN" | "CHINESE_CHN" | "CHINESE_HKG" | "CHINESE_TAI" | "CROATIAN" | "CZECH" | "DANISH" | "DUTCH" | "ENGLISH" | "ENGLISH_UK" | "ENGLISH_US" | "ESTONIAN" | "FILIPINO" | "FINNISH" | "FRENCH" | "GEORGIAN" | "GERMAN" | "GREEK" | "GUJARATI" | "HAUSA" | "HEBREW" | "HINDI" | "HUNGARIAN" | "INDONESIAN" | "IRISH" | "ITALIAN" | "JAPANESE" | "KANNADA" | "KAZAKH" | "KINYARWANDA" | "KOREAN" | "KYRGYZ_KYRGYZSTAN" | "LAO" | "LATVIAN" | "LITHUANIAN" | "MACEDONIAN" | "MALAY" | "MALAYALAM" | "MARATHI" | "NORWEGIAN" | "PERSIAN" | "POLISH" | "PORTUGUESE_BR" | "PORTUGUESE_POR" | "PUNJABI" | "ROMANIAN" | "RUSSIAN" | "SERBIAN" | "SLOVAK" | "SLOVENIAN" | "SPANISH" | "SPANISH_ARG" | "SPANISH_SPA" | "SPANISH_MEX" | "SWAHILI" | "SWEDISH" | "TAMIL" | "TELUGU" | "THAI" | "TURKISH" | "UKRAINIAN" | "URDU" | "UZBEK" | "VIETNAMESE" | "ZULU";
-    body: (string | (string | {
+    body: string | (string | {
         code: string;
         currency: string;
         amount: number;
     } | {
         dateTime: string;
-    })[]) & (string | (string | {
-        code: string;
-        currency: string;
-        amount: number;
-    } | {
-        dateTime: string;
-    })[] | undefined);
+    })[];
     header?: string | {
         type: "IMAGE" | "DOCUMENT" | "VIDEO";
         media: string;
@@ -1791,8 +1743,8 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: "LOCATION";
         latitude: string;
         longitude: string;
-        name?: string | undefined;
         address?: string | undefined;
+        name?: string | undefined;
     } | undefined;
     buttons?: {
         title: string;
@@ -1803,8 +1755,8 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     } | {
         type: "CopyCodeButton";
         example: string;
@@ -1829,8 +1781,8 @@ export declare const SendTemplateSchema: z.ZodObject<{
         type: "PhoneNumberButton";
         phoneNumber: string;
     } | {
-        type: "QuickReplyButton";
         text: string;
+        type: "QuickReplyButton";
     } | {
         type: "CopyCodeButton";
         example: string;

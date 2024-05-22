@@ -2,15 +2,14 @@
 import { EventEmitter } from "events";
 import { ResponseType } from "axios";
 import * as z from "zod";
-import Message from "../handlers/message-handler";
 import { CreateTempleteSchema, SendContacOptionSchema, SendTemplateSchema, UpdateBusinessProfileSchema, nameSchema, phoneSchema, sendMediaInteractiveSchema, sendMessageOptionsSchema } from "../schemas/schema";
 import Callback from "../handlers/callback-handler";
 import Update from "../handlers/update-handler";
 import RequestWelcome from "../handlers/request-welcome-handler";
-import { CreateTempleteResponse, isSuccessResponse } from "../types/internal-types";
+import { ClassMessageType, CreateTempleteResponse, isSuccessResponse } from "../types/internal-types";
 import { ClientOptions } from "../types/shared";
 type MessageHandlers = {
-    messages: (message: Message) => void;
+    messages: (message: ClassMessageType) => void;
     statuses: (statuses: Update) => void;
     callbacks: (callbacks: Callback) => void;
     ChatOpened: (chat: RequestWelcome) => void;

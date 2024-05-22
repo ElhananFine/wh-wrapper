@@ -70,7 +70,7 @@ type Unsupported = {
         };
     }[];
 };
-type MesaageTypes = Text | Image | Video | Sticker | Document | Audio | Location | Reaction | Interactive | Contacts | Unsupported;
+export type MesaageTypes = Text | Image | Video | Sticker | Document | Audio | Location | Reaction | Interactive | Contacts | Unsupported;
 export type MessageValueType<T extends "messages" | "statuses"> = {
     messaging_product: "whatsapp";
     metadata: {

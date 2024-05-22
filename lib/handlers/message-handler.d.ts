@@ -1,11 +1,18 @@
 import Client from "../client/client";
 import { BaseHandler } from "./base-handler";
-import type { MessageType, MessageValueType } from "../types/whatsapp-types";
+import type { MessageValueType } from "../types/whatsapp-types";
 import type { Image, Sticker, Video, Document, Audio, Location, Reaction, Error, Context, Media } from "../types/exports-types";
 import type { Contact } from "../types/shared";
-type MessageTypes = Exclude<MessageType, "order" | "system" | "interactive" | "request_welcome" | "errors">;
-export default class Message extends BaseHandler {
-    type: MessageTypes;
+import { MesaageTypes } from "../types/whatsapp-types";
+interface MessageInstance extends MesaageTypes {
+    timestamp: Date;
+    forwarded: boolean;
+    forwardedManyTimes?: boolean;
+    isReply: boolean;
+    hasMedia: boolean;
+    context?: Context;
+}
+export default class Message extends BaseHandler implements MessageInstance {
     timestamp: Date;
     forwarded: boolean;
     forwardedManyTimes?: boolean;
